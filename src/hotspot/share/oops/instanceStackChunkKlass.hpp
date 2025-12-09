@@ -114,6 +114,8 @@ private:
 public:
   InstanceStackChunkKlass();
 
+  DEBUG_ONLY(bool is_stack_chunk_instance_klass_slow() const override { return true; })
+
   // Casting from Klass*
   static InstanceStackChunkKlass* cast(Klass* k) {
     assert(k->is_stack_chunk_instance_klass(), "cast to InstanceStackChunkKlass");
