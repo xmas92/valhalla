@@ -50,17 +50,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* k, Symbol* name, ArrayKlass::ArrayProperties props,
-                                       TRAPS) {
-  assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
-      "array klasses must be same size as InstanceKlass");
-
-  int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
-
-  return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name, Kind, props, ArrayKlass::is_null_restricted(props) ? markWord::null_free_array_prototype() : markWord::prototype());
-}
-
 Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klass* element_klass) {
   ResourceMark rm(current);
   char* name_str = element_klass->name()->as_C_string();
@@ -78,54 +67,6 @@ Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klas
   }
   new_str[idx] = '\0';
   return SymbolTable::new_symbol(new_str);
-}
-
-
-ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                      int n, Klass* element_klass,  TRAPS) {
-
-  // Eagerly allocate the direct array supertype.
-  Klass* super_klass = nullptr;
-  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
-    assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
-    Klass* element_super = element_klass->super();
-    if (element_super != nullptr) {
-      // The element type has a direct super.  E.g., String[] has direct super of Object[].
-      // Also, see if the element has secondary supertypes.
-      // We need an array type for each before creating this array type.
-      super_klass = element_super->array_klass(CHECK_NULL);
-      const Array<Klass*>* element_supers = element_klass->secondary_supers();
-      for (int i = element_supers->length() - 1; i >= 0; i--) {
-        Klass* elem_super = element_supers->at(i);
-        elem_super->array_klass(CHECK_NULL);
-      }
-      // Fall through because inheritance is acyclic and we hold the global recursive lock to allocate all the arrays.
-    } else {
-      // The element type is already Object.  Object[] has direct super of Object.
-      super_klass = vmClasses::Object_klass();
-    }
-  }
-
-  // Create type name for klass.
-  Symbol* name = create_element_klass_array_name(THREAD, element_klass);
-
-  // Initialize instance variables
-  ObjArrayKlass* oak = ObjArrayKlass::allocate_klass(loader_data, n, element_klass, name, ArrayProperties::INVALID, CHECK_NULL);
-
-  ModuleEntry* module = oak->module();
-  assert(module != nullptr, "No module entry for array");
-
-  // Call complete_create_array_klass after all instance variables has been initialized.
-  ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_NULL);
-
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (null) class loader.
-  // Do this step after creating the mirror so that if the
-  // mirror creation fails, loaded_classes_do() doesn't find
-  // an array class without a mirror.
-  loader_data->add_class(oak);
-
-  return oak;
 }
 
 ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mk) :
@@ -394,8 +335,6 @@ PackageEntry* ObjArrayKlass::package() const {
 }
 
 ObjArrayKlass* ObjArrayKlass::klass_with_properties(ArrayKlass::ArrayProperties props, TRAPS) {
-  assert(props != ArrayProperties::INVALID, "Sanity check");
-
   if (properties() == props) {
     assert(is_refArray_klass() || is_flatArray_klass(), "Must be a concrete array klass");
     return this;

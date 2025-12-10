@@ -49,6 +49,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -370,7 +371,7 @@ void DynamicArchiveBuilder::gather_array_klasses() {
   for (int i = 0; i < klasses()->length(); i++) {
     if (klasses()->at(i)->is_objArray_klass()) {
       ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
-      if (oak->is_refined_objArray_klass()) {
+      if (oak->is_typeArray_klass()) {
         oak = ObjArrayKlass::cast(oak->super());
       }
       Klass* elem = oak->element_klass();
@@ -443,14 +444,15 @@ void DynamicArchive::setup_array_klasses() {
       Klass* elm = oak->element_klass();
       assert(AOTMetaspace::in_aot_cache_static_region((void*)elm), "must be");
       // Higher dimension may have been set when doing setup on ObjArrayKlass
-      if (!oak->is_refined_objArray_klass()) {
+      if (oak->is_refArray_klass()) {
+        RefArrayKlass* rak = RefArrayKlass::cast(oak);
         if (elm->is_instance_klass()) {
           assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
-          InstanceKlass::cast(elm)->set_array_klasses(oak);
+          InstanceKlass::cast(elm)->set_array_klasses(rak);
         } else {
           assert(elm->is_array_klass(), "sanity");
           assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
-          ArrayKlass::cast(elm)->set_higher_dimension(oak);
+          ArrayKlass::cast(elm)->set_higher_dimension(rak);
         }
       }
     }

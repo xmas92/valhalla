@@ -231,7 +231,7 @@ class InstanceKlass: public Klass {
   // Package this class is defined in
   PackageEntry*   _package_entry;
   // Array classes holding elements of this class.
-  ObjArrayKlass* volatile _array_klasses;
+  RefArrayKlass* volatile _array_klasses;
   // Constant pool for this class.
   ConstantPool* _constants;
   // The InnerClasses attribute and EnclosingMethod attribute. The
@@ -424,10 +424,10 @@ class InstanceKlass: public Klass {
   void set_itable_length(int len)          { _itable_len = len; }
 
   // array klasses
-  ObjArrayKlass* array_klasses() const     { return _array_klasses; }
-  inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
+  RefArrayKlass* array_klasses() const     { return _array_klasses; }
+  inline RefArrayKlass* array_klasses_acquire() const; // load with acquire semantics
+  inline void release_set_array_klasses(RefArrayKlass* k); // store with release semantics
+  void set_array_klasses(RefArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }

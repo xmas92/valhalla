@@ -29,11 +29,11 @@
 
 #include "runtime/atomicAccess.hpp"
 
-inline ObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
+inline RefArrayKlass* ArrayKlass::higher_dimension_acquire() const {
   return AtomicAccess::load_acquire(&_higher_dimension);
 }
 
-inline void ArrayKlass::release_set_higher_dimension(ObjArrayKlass* k) {
+inline void ArrayKlass::release_set_higher_dimension(RefArrayKlass* k) {
   AtomicAccess::release_store(&_higher_dimension, k);
 }
 

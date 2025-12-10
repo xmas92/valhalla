@@ -38,9 +38,6 @@ class ObjArrayKlass : public ArrayKlass {
   friend class oopFactory;
   friend class VMStructs;
 
- public:
-  static const KlassKind Kind = ObjArrayKlassKind;
-
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ObjArrayKlass::metaspace_pointers_do().
@@ -52,7 +49,6 @@ class ObjArrayKlass : public ArrayKlass {
  protected:
   // Constructor
   ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mw);
-  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, ArrayKlass::ArrayProperties props, TRAPS);
 
   static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
   ObjArrayKlass* allocate_klass_with_properties(ArrayKlass::ArrayProperties props, TRAPS);
@@ -92,10 +88,6 @@ class ObjArrayKlass : public ArrayKlass {
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
   DEBUG_ONLY(bool is_objArray_klass_slow() const override { return true; })
   size_t oop_size(oop obj) const override;
-
-  // Allocation
-  static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                int n, Klass* element_klass, TRAPS);
 
   oop multi_allocate(int rank, jint* sizes, TRAPS) override;
 

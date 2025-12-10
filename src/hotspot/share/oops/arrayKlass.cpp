@@ -22,6 +22,7 @@
  *
  */
 
+#include "oops/arrayKlass.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
@@ -166,14 +167,14 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
 
     if (higher_dimension() == nullptr) {
       // Create multi-dim klass object and link them together
-      ObjArrayKlass* ak = RefArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
+      RefArrayKlass* ak = RefArrayKlass::allocate_refArray_klass(class_loader_data(), dim + 1, this, DEFAULT, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_higher_dimension(ak);
       assert(ak->lower_dimension() == this, "lower dimension mismatch");
     }
   }
 
-  ObjArrayKlass* ak = higher_dimension();
+  RefArrayKlass* ak = higher_dimension();
   assert(ak != nullptr, "should be set");
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
@@ -190,7 +191,7 @@ ArrayKlass* ArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass *ak = higher_dimension();
+  RefArrayKlass *ak = higher_dimension();
   return ak->array_klass_or_null(n);
 }
 

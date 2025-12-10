@@ -61,6 +61,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/inlineKlass.hpp"
@@ -1896,7 +1897,7 @@ ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
 
     // Check if another thread created the array klass while we were waiting for the lock.
     if (array_klasses() == nullptr) {
-      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+      RefArrayKlass* k = RefArrayKlass::allocate_refArray_klass(class_loader_data(), 1, this, ArrayKlass::DEFAULT, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_array_klasses(k);
     }
@@ -3113,7 +3114,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
       log_debug(cds)("  loader_data %s ", loader_data == nullptr ? "nullptr" : "non null");
       log_debug(cds)("  this %s array_klasses %s ", this->name()->as_C_string(), array_klasses()->name()->as_C_string());
     }
-    assert(!array_klasses()->is_refined_objArray_klass(), "must be non-refined objarrayklass");
+    assert(array_klasses()->is_refArray_klass(), "must be ref array klass");
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 

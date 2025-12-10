@@ -69,7 +69,21 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
     assert(MultiArray_lock->holds_lock(THREAD),
            "must hold lock after bootstrapping");
     Klass* element_super = element_klass->super();
-    super_klass = element_klass->array_klass(CHECK_NULL);
+    if (element_super != nullptr) {
+      // The element type has a direct super.  E.g., String[] has direct super of Object[].
+      // Also, see if the element has secondary supertypes.
+      // We need an array type for each before creating this array type.
+      super_klass = element_super->array_klass(CHECK_NULL);
+      const Array<Klass*>* element_supers = element_klass->secondary_supers();
+      for (int i = element_supers->length() - 1; i >= 0; i--) {
+        Klass* elem_super = element_supers->at(i);
+        elem_super->array_klass(CHECK_NULL);
+      }
+      // Fall through because inheritance is acyclic and we hold the global recursive lock to allocate all the arrays.
+    } else {
+      // The element type is already Object.  Object[] has direct super of Object.
+      super_klass = vmClasses::Object_klass();
+    }
   }
 
   // Create type name for klass.
