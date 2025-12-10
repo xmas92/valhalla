@@ -191,7 +191,7 @@ class InlineKlass: public InstanceKlass {
 
  public:
   // Type testing
-  bool is_inline_klass_slow() const override { return true; }
+  DEBUG_ONLY(bool is_inline_klass_slow() const override { return true; })
 
   // Casting from Klass*
 
