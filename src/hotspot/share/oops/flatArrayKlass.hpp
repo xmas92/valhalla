@@ -44,7 +44,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
  private:
   // Constructor
-  FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk);
+  FlatArrayKlass(MetaObjArrayKlass* meta_klass, ArrayProperties props, LayoutKind lk);
 
   LayoutKind _layout_kind;
 
@@ -52,8 +52,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
   FlatArrayKlass() {} // used by CppVtableCloner<T>::initialize()
 
-  InlineKlass* element_klass() const override { return InlineKlass::cast(_element_klass); }
-  void set_element_klass(Klass* k) override { assert(k->is_inline_klass(), "Must be"); _element_klass = k; }
+  InlineKlass* element_klass() const override { return InlineKlass::cast(ObjArrayKlass::element_klass()); }
 
   LayoutKind layout_kind() const  { return _layout_kind; }
   void set_layout_kind(LayoutKind lk) { _layout_kind = lk; }
@@ -66,7 +65,7 @@ class FlatArrayKlass : public ObjArrayKlass {
   }
 
   // klass allocation
-  static FlatArrayKlass* allocate_klass(Klass* element_klass, ArrayProperties props, LayoutKind lk, TRAPS);
+  static FlatArrayKlass* allocate_flatArray_klass(MetaObjArrayKlass* meta_klass, ArrayProperties props, LayoutKind lk, TRAPS);
 
   void initialize(TRAPS) override;
 
@@ -101,7 +100,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
   // Oop Allocation
  private:
-  objArrayOop allocate_instance(int length, ArrayProperties props, TRAPS) override;
+  objArrayOop allocate_instance(int length, TRAPS) override;
  public:
   oop multi_allocate(int rank, jint* sizes, TRAPS) override;
 

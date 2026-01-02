@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/flatArrayKlass.hpp"
+#include "oops/metadata.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
@@ -2369,7 +2370,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       if (klass->is_inlinetype() && tkls->offset() == in_bytes(InstanceKlass::acmp_maps_offset_offset())) {
         return TypeInt::make(klass->as_inline_klass()->field_map_offset());
       }
-      if (klass->is_obj_array_klass() && tkls->offset() == in_bytes(ObjArrayKlass::next_refined_array_klass_offset())) {
+      if (klass->is_obj_array_klass() && tkls->offset() == in_bytes(MetaObjArrayKlass::default_refined_array_klass_offset())) {
         // Fold loads from LibraryCallKit::load_default_refined_array_klass
         return tkls->is_aryklassptr()->cast_to_refined_array_klass_ptr();
       }

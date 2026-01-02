@@ -25,6 +25,7 @@
 #include "asm/register.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
@@ -1895,7 +1896,7 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciInlineKlass* elem_vk) {
     is_null_free = true;
   }
 
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
+  ciArrayKlass* array_klass = ciMetaObjArrayKlass::make(elem_vk);
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
@@ -1903,7 +1904,7 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciInlineKlass* elem_vk) {
 
 Node* GraphKit::cast_to_flat_array_exact(Node* array, ciInlineKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, is_null_free, is_atomic);
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   assert(arytype->klass_is_exact(), "inconsistency");
   assert(arytype->is_flat(), "inconsistency");

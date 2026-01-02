@@ -1654,16 +1654,6 @@ void Method::restore_archived_method_handle_intrinsic(methodHandle m, TRAPS) {
 }
 #endif
 
-Klass* Method::check_non_bcp_klass(Klass* klass) {
-  if (klass != nullptr && klass->class_loader() != nullptr) {
-    if (klass->is_objArray_klass())
-      klass = ObjArrayKlass::cast(klass)->bottom_klass();
-    return klass;
-  }
-  return nullptr;
-}
-
-
 methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                                 u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS) {
   // Code below does not work for native methods - they should never get rewritten anyway

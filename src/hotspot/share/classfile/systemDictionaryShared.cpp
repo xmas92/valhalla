@@ -556,6 +556,7 @@ Klass* SystemDictionaryShared::find_verification_constraint_bottom_class(Instanc
     return nullptr;
   }
 
+  precond(!constraint_class->is_metaObjArray_klass());
   if (constraint_class->is_objArray_klass()) {
     constraint_class = ObjArrayKlass::cast(constraint_class)->bottom_klass();
   }

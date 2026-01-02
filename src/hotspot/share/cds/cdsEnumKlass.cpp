@@ -93,7 +93,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
   oop oop_field = mirror->obj_field(fd.offset());
   // There should be no oops for ObjArrayKlass but InstanceKlass::array_klasses holds a list of ObjArrayKlass,
   // therefore we need the super of the refined array klass.
-  Klass* oop_field_klass = oop_field->is_refined_objArray() ? oop_field->klass()->super() : oop_field->klass();
+  Klass* oop_field_klass = oop_field->klass()->java_klass();
   if (oop_field == nullptr) {
     guarantee(false, "static field %s::%s must not be null",
               ik->external_name(), fd.name()->as_C_string());

@@ -1105,15 +1105,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   if (k->is_array_klass()) {
     // The Java code for array classes gets the access flags from the element type.
     set_raw_access_flags(mirror(), 0);
-    if (k->is_flatArray_klass()) {
-      Klass* element_klass = (Klass*) FlatArrayKlass::cast(k)->element_klass();
-      assert(element_klass->is_inline_klass(), "Must be inline type component");
-      if (is_scratch) {
-        comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(element_klass));
-      } else {
-        comp_mirror = Handle(THREAD, element_klass->java_mirror());
-      }
-    } else if (k->is_typeArray_klass()) {
+    if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
         comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(type));
@@ -1121,9 +1113,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
         comp_mirror = Handle(THREAD, Universe::java_mirror(type));
       }
     } else {
-      assert(k->is_objArray_klass(), "Must be");
-      assert(!k->is_refArray_klass() || !k->is_flatArray_klass(), "Must not have mirror");
-      Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
+      assert(k->is_metaObjArray_klass(), "Must be");
+      Klass* element_klass = MetaObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != nullptr, "Must have an element klass");
       oop comp_oop = element_klass->java_mirror();
       if (is_scratch) {
@@ -1164,7 +1155,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   // the mirror.
   if (vmClasses::Class_klass_is_loaded()) {
 
-    if (k->is_refined_objArray_klass()) {
+    if (k->is_objArray_klass()) {
       Klass* super_klass = k->super();
       assert(super_klass != nullptr, "Must be");
       Handle mirror(THREAD, super_klass->java_mirror());
@@ -1270,9 +1261,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
       set_protection_domain(mirror(), protection_domain());
     }
   } else {
-    ObjArrayKlass* objarray_k = (ObjArrayKlass*)as_Klass(m);
+    // ObjArrayKlass* objarray_k = (ObjArrayKlass*)as_Klass(m);
     // Mirror should be restored for an ObjArrayKlass or one of its refined array klasses
-    assert(objarray_k == k || objarray_k->next_refined_array_klass() == k, "must be");
+    // assert(objarray_k == k || objarray_k->next_refined_array_klass() == k, "must be");
   }
 
   assert(class_loader() == k->class_loader(), "should be same");
@@ -1510,7 +1501,7 @@ Klass* java_lang_Class::array_klass_acquire(oop java_class) {
 
 void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
-  assert(!klass->is_refined_objArray_klass(), "should not be ref or flat array klass");
+  assert(klass->is_metaObjArray_klass() || klass->is_typeArray_klass(), "should be meta or type array klass");
   java_class->release_metadata_field_put(_array_klass_offset, klass);
 }
 

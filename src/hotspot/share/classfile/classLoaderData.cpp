@@ -424,6 +424,14 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
         // bottom class are already restored and placed in the _klasses list.
         continue;
       }
+    } else if (k->in_aot_cache() && k->is_metaObjArray_klass()) {
+      Klass* bottom = MetaObjArrayKlass::cast(k)->bottom_klass();
+      if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
+        // This could happen if <bottom> is a shared class that has been restored
+        // but is not yet marked as loaded. All archived array classes of the
+        // bottom class are already restored and placed in the _klasses list.
+        continue;
+      }
     }
 
 #ifdef ASSERT

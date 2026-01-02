@@ -57,6 +57,8 @@ class InstanceMirrorKlass: public InstanceKlass {
  public:
   InstanceMirrorKlass();
 
+  InstanceMirrorKlass* java_klass() override { return this; }
+
   DEBUG_ONLY(bool is_mirror_instance_klass_slow() const override { return true; })
 
   static InstanceMirrorKlass* cast(Klass* k) {

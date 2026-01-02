@@ -43,6 +43,7 @@
 #include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -832,8 +833,8 @@ static void getBaseAndScale(int& base, int& scale, jclass clazz, TRAPS) {
     base  = tak->array_header_in_bytes();
     assert(base == arrayOopDesc::base_offset_in_bytes(tak->element_type()), "array_header_size semantics ok");
     scale = (1 << tak->log2_element_size());
-  } else if (k->is_objArray_klass()) {
-    Klass* ek = ObjArrayKlass::cast(k)->element_klass();
+  } else if (k->is_metaObjArray_klass()) {
+    Klass* ek = MetaObjArrayKlass::cast(k)->element_klass();
     if (!ek->is_identity_class() && !ek->is_abstract()) {
       // Arrays of a concrete value class type can have multiple layouts
       // There's no good value to return, so throwing an exception is the way out

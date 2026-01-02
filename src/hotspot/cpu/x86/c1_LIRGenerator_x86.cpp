@@ -32,6 +32,7 @@
 #include "ci/ciArray.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "runtime/sharedRuntime.hpp"

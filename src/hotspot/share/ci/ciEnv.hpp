@@ -92,7 +92,7 @@ private:
 
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
-  static ciObjArrayKlass* _unloaded_ciobjarrayklass;
+  static ciMetaObjArrayKlass* _unloaded_ciobjarrayklass;
 
   ciInstance* _NullPointerException_instance;
   ciInstance* _ArithmeticException_instance;
@@ -199,9 +199,12 @@ private:
     if (o == nullptr) return nullptr;
     return get_object(o)->as_instance();
   }
+  ciMetaObjArrayKlass* get_meta_obj_array_klass(Klass* o) {
+    if (o == nullptr) return nullptr;
+    return get_metadata(o)->as_meta_obj_array_klass();
+  }
   ciObjArrayKlass* get_obj_array_klass(Klass* o) {
     if (o == nullptr) return nullptr;
-    assert(o->is_objArray_klass() && !o->is_flatArray_klass() && !o->is_refArray_klass(), "must be exact");
     return get_metadata(o)->as_obj_array_klass();
   }
   ciFlatArrayKlass* get_flat_array_klass(Klass* o) {
@@ -424,7 +427,7 @@ public:
   static ciSymbol* unloaded_cisymbol() {
     return _unloaded_cisymbol;
   }
-  static ciObjArrayKlass* unloaded_ciobjarrayklass() {
+  static ciMetaObjArrayKlass* unloaded_ciobjarrayklass() {
     return _unloaded_ciobjarrayklass;
   }
   static ciInstanceKlass* unloaded_ciinstance_klass() {

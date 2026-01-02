@@ -31,18 +31,18 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
-inline oop CollectedHeap::obj_allocate(Klass* klass, size_t size, TRAPS) {
+inline oop CollectedHeap::obj_allocate(InstanceKlass* klass, size_t size, TRAPS) {
   ObjAllocator allocator(klass, size, THREAD);
   return allocator.allocate();
 }
 
-inline oop CollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  assert(!klass->is_objArray_klass() || klass->is_refArray_klass() || klass->is_flatArray_klass(), "ObjArrayKlass must never be used to allocate array instances directly");
+inline oop CollectedHeap::array_allocate(ArrayKlass* klass, size_t size, int length, bool do_zero, TRAPS) {
+  assert(!klass->is_metaObjArray_klass(), "Allocation requires a refined klass");
   ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }
 
-inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
+inline oop CollectedHeap::class_allocate(InstanceMirrorKlass* klass, size_t size, TRAPS) {
   ClassAllocator allocator(klass, size, THREAD);
   return allocator.allocate();
 }

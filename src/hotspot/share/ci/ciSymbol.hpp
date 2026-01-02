@@ -45,6 +45,8 @@ class ciSymbol : public ciBaseObject {
   friend class ciMethod;
   friend class ciField;
   friend class ciObjArrayKlass;
+  friend class ciMetaObjArrayKlass;
+  friend class ciRefArrayKlass;
   friend class ciFlatArrayKlass;
 
 private:

@@ -129,6 +129,7 @@ public:
   virtual bool is_method_type()       const { return false; }
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
+  virtual bool is_ref_array()               { return false; }
   virtual bool is_type_array()              { return false; }
   virtual bool is_flat_array()        const { return false; }
   virtual bool is_native_entry_point()const { return false; }

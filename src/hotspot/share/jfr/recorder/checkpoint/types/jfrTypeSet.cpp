@@ -142,6 +142,7 @@ static inline CldPtr get_cld(ModPtr mod) {
 
 static ClassLoaderData* get_cld(const Klass* klass) {
   assert(klass != nullptr, "invariant");
+  precond(!klass->is_metaObjArray_klass());
   if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }

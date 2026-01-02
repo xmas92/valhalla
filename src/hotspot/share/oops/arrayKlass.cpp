@@ -167,14 +167,14 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
 
     if (higher_dimension() == nullptr) {
       // Create multi-dim klass object and link them together
-      ObjArrayKlass* ak = RefArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
+      MetaObjArrayKlass* ak = MetaObjArrayKlass::allocate_metaObjArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_higher_dimension(ak);
       assert(ak->lower_dimension() == this, "lower dimension mismatch");
     }
   }
 
-  ObjArrayKlass* ak = higher_dimension();
+  MetaObjArrayKlass* ak = higher_dimension();
   assert(ak != nullptr, "should be set");
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
@@ -191,7 +191,7 @@ ArrayKlass* ArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass *ak = higher_dimension();
+  MetaObjArrayKlass *ak = higher_dimension();
   return ak->array_klass_or_null(n);
 }
 
@@ -289,7 +289,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
   // Klass recreates the component mirror also
 
   if (_higher_dimension != nullptr) {
-    ObjArrayKlass *ak = higher_dimension();
+    MetaObjArrayKlass *ak = higher_dimension();
     log_array_class_load(ak);
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }

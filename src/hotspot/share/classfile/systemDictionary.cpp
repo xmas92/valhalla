@@ -2298,8 +2298,9 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
 // Out of an abundance of caution, we do not include any other classes, not even for packages like java.util.
 static bool is_always_visible_class(oop mirror) {
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass->is_objArray_klass()) {
-    klass = ObjArrayKlass::cast(klass)->bottom_klass(); // check element type
+  precond(!klass->is_objArray_klass());
+  if (klass->is_metaObjArray_klass()) {
+    klass = MetaObjArrayKlass::cast(klass)->bottom_klass(); // check element type
   }
   if (klass->is_typeArray_klass()) {
     return true; // primitive array

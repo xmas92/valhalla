@@ -66,6 +66,7 @@ class    ciKlass;
 class     ciInstanceKlass;
 class       ciInlineKlass;
 class     ciArrayKlass;
+class       ciMetaObjArrayKlass;
 class       ciObjArrayKlass;
 class         ciFlatArrayKlass;
 class         ciRefArrayKlass;
@@ -122,8 +123,10 @@ friend class ciKlass;                  \
 friend class ciInstanceKlass;          \
 friend class ciInlineKlass;            \
 friend class ciArrayKlass;             \
-friend class ciFlatArrayKlass;         \
+friend class ciMetaObjArrayKlass;      \
 friend class ciObjArrayKlass;          \
+friend class ciFlatArrayKlass;         \
+friend class ciRefArrayKlass;          \
 friend class ciTypeArrayKlass;         \
 
 #endif // SHARE_CI_CICLASSLIST_HPP

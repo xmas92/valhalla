@@ -305,9 +305,10 @@ void LinkInfo::print() {
 // Klass resolution
 
 void LinkResolver::check_klass_accessibility(Klass* ref_klass, Klass* sel_klass, TRAPS) {
+  precond(!sel_klass->is_objArray_klass());
   Klass* base_klass = sel_klass;
-  if (sel_klass->is_objArray_klass()) {
-    base_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
+  if (sel_klass->is_metaObjArray_klass()) {
+    base_klass = MetaObjArrayKlass::cast(sel_klass)->bottom_klass();
   }
   // The element type could be a typeArray - we only need the access
   // check if it is a reference to another class.

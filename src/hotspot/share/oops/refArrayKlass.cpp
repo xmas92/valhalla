@@ -47,20 +47,21 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-RefArrayKlass *RefArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* k, Symbol *name, ArrayKlass::ArrayProperties props,
-                                       TRAPS) {
+RefArrayKlass* RefArrayKlass::allocate_klass(MetaObjArrayKlass* meta_klass,
+                                             ArrayKlass::ArrayProperties props,
+                                             TRAPS) {
   assert(RefArrayKlass::header_size() <= InstanceKlass::header_size(),
          "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(RefArrayKlass::header_size());
-
-  return new (loader_data, size, THREAD) RefArrayKlass(n, k, name, props);
+  return new (meta_klass->class_loader_data(), size, THREAD) RefArrayKlass(meta_klass, props);
 }
 
-RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* element_klass, ArrayKlass::ArrayProperties props,
-                                       TRAPS) {
+RefArrayKlass* RefArrayKlass::allocate_refArray_klass(MetaObjArrayKlass* meta_klass,
+                                                      ArrayKlass::ArrayProperties props,
+                                                      TRAPS) {
+  int n = meta_klass->dimension();
+  Klass* element_klass = meta_klass->element_klass();
   assert(!ArrayKlass::is_null_restricted(props) || (n == 1 && element_klass->is_inline_klass()),
          "null-free unsupported");
 
@@ -69,7 +70,6 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
   if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
     assert(MultiArray_lock->holds_lock(THREAD),
            "must hold lock after bootstrapping");
-    Klass* element_super = element_klass->super();
     super_klass = element_klass->array_klass(CHECK_NULL);
   }
 
@@ -77,8 +77,7 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
   Symbol* name = ArrayKlass::create_element_klass_array_name(element_klass, CHECK_NULL);
 
   // Initialize instance variables
-  RefArrayKlass* oak = RefArrayKlass::allocate_klass(loader_data, n, element_klass,
-                                               name, props, CHECK_NULL);
+  RefArrayKlass* oak = RefArrayKlass::allocate_klass(meta_klass, props, CHECK_NULL);
 
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
@@ -92,27 +91,21 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
   // Do this step after creating the mirror so that if the
   // mirror creation fails, loaded_classes_do() doesn't find
   // an array class without a mirror.
-  loader_data->add_class(oak);
+  meta_klass->class_loader_data()->add_class(oak);
 
   return oak;
 }
 
-RefArrayKlass::RefArrayKlass(int n, Klass* element_klass, Symbol* name,
-                             ArrayKlass::ArrayProperties props)
-    : ObjArrayKlass(n, element_klass, name, Kind, props,
+RefArrayKlass::RefArrayKlass(MetaObjArrayKlass* meta_klass, ArrayKlass::ArrayProperties props)
+    : ObjArrayKlass(meta_klass, Kind, props,
                     ArrayKlass::is_null_restricted(props) ? markWord::null_free_array_prototype() : markWord::prototype()) {
-  set_dimension(n);
+  Klass* const element_klass = this->element_klass();
+  const int n = dimension();
   set_element_klass(element_klass);
 
-  Klass* bk;
-  if (element_klass->is_objArray_klass()) {
-    bk = ObjArrayKlass::cast(element_klass)->bottom_klass();
-  } else {
-    bk = element_klass;
-  }
+  Klass* const bk = meta_klass->bottom_klass();
   assert(bk != nullptr && (bk->is_instance_klass() || bk->is_typeArray_klass()),
          "invalid bottom klass");
-  set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
 
   if (element_klass->is_array_klass()) {
@@ -140,7 +133,7 @@ size_t RefArrayKlass::oop_size(oop obj) const {
   return refArrayOop(obj)->object_size();
 }
 
-objArrayOop RefArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
+objArrayOop RefArrayKlass::allocate_instance(int length, TRAPS) {
   check_array_allocation_length(
       length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = refArrayOopDesc::object_size(length);

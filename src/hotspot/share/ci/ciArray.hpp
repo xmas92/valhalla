@@ -31,6 +31,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/flatArrayOop.hpp"
 #include "oops/objArrayOop.hpp"
+#include "oops/refArrayOop.hpp"
 #include "oops/typeArrayOop.hpp"
 
 // ciArray
@@ -44,6 +45,7 @@ private:
 protected:
   ciArray( objArrayHandle h_a) : ciObject(h_a), _length(h_a()->length()) {}
   ciArray(typeArrayHandle h_a) : ciObject(h_a), _length(h_a()->length()) {}
+  ciArray( refArrayHandle h_a) : ciObject(h_a), _length(h_a()->length()) {}
   ciArray(flatArrayHandle h_a) : ciObject(h_a), _length(h_a()->length()) {}
 
   arrayOop get_arrayOop() const { return (arrayOop)get_oop(); }

@@ -52,6 +52,8 @@ class TypeArrayKlass : public ArrayKlass {
  public:
   TypeArrayKlass() {} // For dummy objects.
 
+  TypeArrayKlass* java_klass() override { return this; }
+
   // instance variables
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }

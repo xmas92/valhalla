@@ -478,6 +478,8 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
         klass = base_klass->next_sibling();
       } else if (offset == in_bytes(ObjArrayKlass::element_klass_offset()) && base_klass->is_objArray_klass()) {
         klass = ObjArrayKlass::cast(base_klass)->element_klass();
+      } else if (offset == in_bytes(MetaObjArrayKlass::element_klass_offset()) && base_klass->is_metaObjArray_klass()) {
+        klass = MetaObjArrayKlass::cast(base_klass)->element_klass();
       } else if (offset >= in_bytes(Klass::primary_supers_offset()) &&
                  offset < in_bytes(Klass::primary_supers_offset()) + (int) (sizeof(Klass*) * Klass::primary_super_limit()) &&
                  offset % sizeof(Klass*) == 0) {

@@ -47,6 +47,8 @@ private:
 public:
   InstanceClassLoaderKlass();
 
+  InstanceClassLoaderKlass* java_klass() override { return this; }
+
   DEBUG_ONLY(bool is_class_loader_instance_klass_slow() const override { return true; })
 
   // Oop fields (and metadata) iterators

@@ -684,8 +684,6 @@ public:
   inline bool is_continuation_native_intrinsic() const;
   inline bool is_special_native_intrinsic() const;
 
-  static Klass* check_non_bcp_klass(Klass* klass);
-
   enum {
     // How many extra stack entries for invokedynamic
     extra_stack_entries_for_jsr292 = 1

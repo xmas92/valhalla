@@ -60,8 +60,8 @@ public:
 
 class DynamicArchive : AllStatic {
 private:
-  static GrowableArray<ObjArrayKlass*>* _array_klasses;
-  static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
+  static GrowableArray<MetaObjArrayKlass*>* _array_klasses;
+  static Array<MetaObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
   static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump_at_exit(JavaThread* current);
@@ -70,7 +70,7 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
   static void dump_array_klasses();
   static void setup_array_klasses();
-  static void append_array_klass(ObjArrayKlass* oak);
+  static void append_array_klass(MetaObjArrayKlass* oak);
   static void serialize(SerializeClosure* soc);
   static void make_array_klasses_shareable();
   static void post_dump();

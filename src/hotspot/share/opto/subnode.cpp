@@ -1192,7 +1192,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_
   if (mirror_klass->is_array_klass() && !mirror_klass->is_type_array_klass()) {
     if (!mirror_klass->can_be_inline_array_klass()) {
       // Special case for non-value arrays: They only have one (default) refined class, use it
-      ciArrayKlass* refined_mirror_klass = ciObjArrayKlass::make(mirror_klass->as_array_klass()->element_klass(), true);
+      ciArrayKlass* refined_mirror_klass = ciObjArrayKlass::make(mirror_klass->as_array_klass()->element_klass());
       return phase->makecon(TypeAryKlassPtr::make(refined_mirror_klass, Type::trust_interfaces));
     }
     might_be_an_array |= true;

@@ -26,6 +26,7 @@
 #include "ci/ciFlatArray.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeFlow.hpp"
@@ -4010,7 +4011,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     const TypeOopPtr* etype = TypeOopPtr::make_from_klass_raw(klass->as_array_klass()->element_klass(), trust_interfaces);
-    bool is_flat = o->as_array()->is_flat();
+    bool is_flat = o->as_array()->is_flat_array();
     bool is_null_free = o->as_array()->is_null_free();
     if (is_null_free) {
       etype = etype->join_speculative(TypePtr::NOTNULL)->is_oopptr();
@@ -6703,7 +6704,8 @@ const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_refined_array_klass_ptr(bool ref
     return this;
   }
   ciArrayKlass* k = exact_klass()->as_array_klass();
-  k = ciObjArrayKlass::make(k->element_klass(), refined);
+  k = refined ? ciObjArrayKlass::make(k->element_klass())
+              : ciMetaObjArrayKlass::make(k->element_klass());
   return make(k, trust_interfaces);
 }
 
@@ -6795,13 +6797,13 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
     }
     if (k->is_array_klass() && k->as_array_klass()->is_refined()) {
       // We have no mechanism to create an array of refined arrays
-      k = ciObjArrayKlass::make(k->as_array_klass()->element_klass(), false);
+      k = ciMetaObjArrayKlass::make(k->as_array_klass()->element_klass());
     }
     if (klass_is_exact()) {
-      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic());
+      return ciObjArrayKlass::make(k, is_null_free(), is_atomic());
     } else {
       // We may reach here if called recursively, must be an unrefined type then
-      return ciObjArrayKlass::make(k, false);
+      return ciMetaObjArrayKlass::make(k);
     }
   }
 
