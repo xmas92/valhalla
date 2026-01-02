@@ -71,6 +71,7 @@
 #include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markWord.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
@@ -1927,7 +1928,7 @@ ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
 
     // Check if another thread created the array klass while we were waiting for the lock.
     if (array_klasses() == nullptr) {
-      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
+      MetaObjArrayKlass* k = MetaObjArrayKlass::allocate_metaObjArray_klass(class_loader_data(), 1, this, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_array_klasses(k);
     }
@@ -3136,7 +3137,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
     RecursiveLocker rl(MultiArray_lock, THREAD);
-    assert(this == ObjArrayKlass::cast(array_klasses())->bottom_klass(), "sanity");
+    assert(this == MetaObjArrayKlass::cast(array_klasses())->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
     if (class_loader_data() == nullptr) {
@@ -3144,7 +3145,6 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
       log_debug(cds)("  loader_data %s ", loader_data == nullptr ? "nullptr" : "non null");
       log_debug(cds)("  this %s array_klasses %s ", this->name()->as_C_string(), array_klasses()->name()->as_C_string());
     }
-    assert(!array_klasses()->is_refined_objArray_klass(), "must be non-refined objarrayklass");
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
@@ -3504,6 +3504,9 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   PackageEntry* classpkg1 = this->package();
   if (class2->is_objArray_klass()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
+  }
+  if (class2->is_metaObjArray_klass()) {
+    class2 = MetaObjArrayKlass::cast(class2)->bottom_klass();
   }
 
   oop classloader2;

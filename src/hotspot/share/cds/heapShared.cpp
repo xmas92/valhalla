@@ -1104,6 +1104,9 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
   if (k->is_objArray_klass()) {
     k = ObjArrayKlass::cast(k)->bottom_klass();
   }
+  if (k->is_metaObjArray_klass()) {
+    k = MetaObjArrayKlass::cast(k)->bottom_klass();
+  }
   if (k->is_instance_klass()) {
     if (!SystemDictionaryShared::is_early_klass(InstanceKlass::cast(k))) {
       ResourceMark rm;
@@ -2191,6 +2194,7 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
       Klass* k = klasses->at(i);
       if (k == ik) {
         Symbol* name;
+        precond(!k->is_metaObjArray_klass());
         if (k->is_instance_klass()) {
           name = InstanceKlass::cast(k)->name();
         } else if (k->is_objArray_klass()) {

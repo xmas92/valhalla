@@ -30,7 +30,7 @@
 
 class fieldDescriptor;
 class klassVtable;
-class ObjArrayKlass;
+class MetaObjArrayKlass;
 
 // ArrayKlass is the abstract baseclass for all array classes
 
@@ -42,6 +42,8 @@ class ArrayKlass: public Klass {
     DEFAULT         = 0,          // NULLABLE and ATOMIC
     NULL_RESTRICTED = 1 << 0,
     NON_ATOMIC      = 1 << 1,
+    VALID_PROPS_MASK = NULL_RESTRICTED | NON_ATOMIC,
+    VALID_PROPS_COUNT = VALID_PROPS_MASK + 1,
     // FINAL           = 1 << 2,
     // VOLATILE        = 1 << 3
     INVALID         = 1 << 4,
@@ -59,7 +61,7 @@ class ArrayKlass: public Klass {
   // must add this field to ArrayKlass::metaspace_pointers_do().
   int      _dimension;         // This is n'th-dimensional array.
   ArrayProperties _properties;
-  ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  MetaObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
 
  protected:
@@ -77,6 +79,8 @@ class ArrayKlass: public Klass {
   // Testing operation
   DEBUG_ONLY(bool is_array_klass_slow() const override { return true; })
 
+  ArrayKlass* java_klass() override { return this; }
+
   // Returns the ObjArrayKlass for n'th dimension.
   ArrayKlass* array_klass(int n, TRAPS) override;
   ArrayKlass* array_klass_or_null(int n) override;
@@ -93,10 +97,10 @@ class ArrayKlass: public Klass {
   void set_properties(ArrayProperties props) { _properties = props; }
   static ByteSize properties_offset() { return byte_offset_of(ArrayKlass, _properties); }
 
-  ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
-  inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
-  void set_higher_dimension(ObjArrayKlass* k) { _higher_dimension = k; }
-  inline void release_set_higher_dimension(ObjArrayKlass* k); // store with release semantics
+  MetaObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
+  inline MetaObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
+  void set_higher_dimension(MetaObjArrayKlass* k) { _higher_dimension = k; }
+  inline void release_set_higher_dimension(MetaObjArrayKlass* k); // store with release semantics
 
   ArrayKlass* lower_dimension() const      { return _lower_dimension; }
   void set_lower_dimension(ArrayKlass* k)  { _lower_dimension = k; }

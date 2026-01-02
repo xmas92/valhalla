@@ -287,9 +287,9 @@ protected:
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
-  oop obj_allocate(Klass* klass, size_t size, TRAPS);
-  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, size_t size, TRAPS);
+  oop obj_allocate(InstanceKlass* klass, size_t size, TRAPS);
+  virtual oop array_allocate(ArrayKlass* klass, size_t size, int length, bool do_zero, TRAPS);
+  oop class_allocate(InstanceMirrorKlass* klass, size_t size, TRAPS);
 
   // Utilities for turning raw memory into filler objects.
   //

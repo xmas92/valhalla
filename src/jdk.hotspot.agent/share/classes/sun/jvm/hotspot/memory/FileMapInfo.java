@@ -128,7 +128,7 @@ public class FileMapInfo {
     metadataTypeArray[6] = db.lookupType("Method");
     metadataTypeArray[7] = db.lookupType("MethodData");
     metadataTypeArray[8] = db.lookupType("MethodCounters");
-    metadataTypeArray[9] = db.lookupType("ObjArrayKlass");
+    metadataTypeArray[9] = db.lookupType("MetaObjArrayKlass");
     metadataTypeArray[10] = db.lookupType("TypeArrayKlass");
     metadataTypeArray[11] = db.lookupType("FlatArrayKlass");
     metadataTypeArray[12] = db.lookupType("InlineKlass");

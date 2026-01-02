@@ -370,10 +370,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocatio
 void DynamicArchiveBuilder::gather_array_klasses() {
   for (int i = 0; i < klasses()->length(); i++) {
     if (klasses()->at(i)->is_objArray_klass()) {
-      ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
-      if (oak->is_refined_objArray_klass()) {
-        oak = ObjArrayKlass::cast(oak->super());
-      }
+      MetaObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i))->meta_klass();
       Klass* elem = oak->element_klass();
       if (AOTMetaspace::in_aot_cache_static_region(elem)) {
         // Only capture the array klass whose element_klass is in the static archive.
@@ -408,8 +405,8 @@ public:
 
 // _array_klasses and _dynamic_archive_array_klasses only hold the array klasses
 // which have element klass in the static archive.
-GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
-Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
+GrowableArray<MetaObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
+Array<MetaObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
 
 void DynamicArchive::serialize(SerializeClosure* soc) {
   SymbolTable::serialize_shared_table_header(soc, false);
@@ -417,9 +414,9 @@ void DynamicArchive::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_dynamic_archive_array_klasses);
 }
 
-void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
+void DynamicArchive::append_array_klass(MetaObjArrayKlass* ak) {
   if (_array_klasses == nullptr) {
-    _array_klasses = new (mtClassShared) GrowableArray<ObjArrayKlass*>(50, mtClassShared);
+    _array_klasses = new (mtClassShared) GrowableArray<MetaObjArrayKlass*>(50, mtClassShared);
   }
   _array_klasses->append(ak);
 }
@@ -430,7 +427,7 @@ void DynamicArchive::dump_array_klasses() {
     ArchiveBuilder* builder = ArchiveBuilder::current();
     int num_array_klasses = _array_klasses->length();
     _dynamic_archive_array_klasses =
-        ArchiveBuilder::new_ro_array<ObjArrayKlass*>(num_array_klasses);
+        ArchiveBuilder::new_ro_array<MetaObjArrayKlass*>(num_array_klasses);
     for (int i = 0; i < num_array_klasses; i++) {
       builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), _array_klasses->at(i));
     }
@@ -440,19 +437,17 @@ void DynamicArchive::dump_array_klasses() {
 void DynamicArchive::setup_array_klasses() {
   if (_dynamic_archive_array_klasses != nullptr) {
     for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
-      ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
+      MetaObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
       Klass* elm = oak->element_klass();
       assert(AOTMetaspace::in_aot_cache_static_region((void*)elm), "must be");
       // Higher dimension may have been set when doing setup on ObjArrayKlass
-      if (!oak->is_refined_objArray_klass()) {
-        if (elm->is_instance_klass()) {
-          assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
-          InstanceKlass::cast(elm)->set_array_klasses(oak);
-        } else {
-          assert(elm->is_array_klass(), "sanity");
-          assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
-          ArrayKlass::cast(elm)->set_higher_dimension(oak);
-        }
+      if (elm->is_instance_klass()) {
+        assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
+        InstanceKlass::cast(elm)->set_array_klasses(oak);
+      } else {
+        assert(elm->is_array_klass(), "sanity");
+        assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
+        ArrayKlass::cast(elm)->set_higher_dimension(oak);
       }
     }
     log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
@@ -463,7 +458,7 @@ void DynamicArchive::make_array_klasses_shareable() {
   if (_array_klasses != nullptr) {
     int num_array_klasses = _array_klasses->length();
     for (int i = 0; i < num_array_klasses; i++) {
-      ObjArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
+      MetaObjArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
       k->remove_unshareable_info();
     }
   }

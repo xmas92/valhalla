@@ -167,7 +167,7 @@
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
-  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
+  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             MetaObjArrayKlass*)                    \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
   nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
@@ -190,7 +190,7 @@
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
-  volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
+  volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                MetaObjArrayKlass*)                    \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
@@ -284,7 +284,8 @@
   nonstatic_field(ConstMethod,                 _size_of_parameters,                           u2)                                    \
   nonstatic_field(ConstMethod,                 _num_stack_arg_slots,                          u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
-  nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
+  nonstatic_field(MetaObjArrayKlass,           _element_klass,                                Klass*)                                \
+  nonstatic_field(MetaObjArrayKlass,           _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _hash_and_refcount,                            unsigned int)                          \
   nonstatic_field(Symbol,                      _length,                                       u2)                                    \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(u1)) /* NOTE: no type */        \
@@ -944,11 +945,12 @@
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
-           declare_type(ArrayKlass, Klass)                                \
-           declare_type(TypeArrayKlass, ArrayKlass)                       \
-           declare_type(ObjArrayKlass, ArrayKlass)                        \
-             declare_type(FlatArrayKlass, ArrayKlass)                     \
-             declare_type(RefArrayKlass, ArrayKlass)                      \
+      declare_type(ArrayKlass, Klass)                                     \
+        declare_type(TypeArrayKlass, ArrayKlass)                          \
+        declare_type(MetaObjArrayKlass, ArrayKlass)                       \
+        declare_type(ObjArrayKlass, ArrayKlass)                           \
+          declare_type(FlatArrayKlass, ObjArrayKlass)                     \
+          declare_type(RefArrayKlass, ObjArrayKlass)                      \
       declare_type(InstanceKlass, Klass)                                  \
         declare_type(InlineKlass, InstanceKlass)                          \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \

@@ -38,6 +38,8 @@ class ciObjArray : public ciArray {
 
 protected:
   ciObjArray(objArrayHandle h_o) : ciArray(h_o) {}
+  ciObjArray(refArrayHandle h_o) : ciArray(h_o) {}
+  ciObjArray(flatArrayHandle h_o) : ciArray(h_o) {}
 
   objArrayOop get_objArrayOop() {
     return (objArrayOop)get_oop();
@@ -50,8 +52,6 @@ public:
   bool is_obj_array() { return true; }
 
   ciObject* obj_at(int index);
-
-  bool is_flat()      { return false; }
 };
 
 #endif // SHARE_CI_CIOBJARRAY_HPP

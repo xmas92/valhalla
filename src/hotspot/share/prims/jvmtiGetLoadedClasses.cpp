@@ -64,9 +64,9 @@ private:
 
   // Some klasses should not be reported by GetLoadedClasses/GetClassLoaderClasses
   bool exclude_klass(Klass* k) const {
-    // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+    // MetaObjArrayKlass represent the Java types that Java code can see.
     // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out.
-    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+    if (k->is_objArray_klass()) {
       return true;
     }
     return false;

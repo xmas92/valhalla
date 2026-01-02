@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,91 +24,41 @@
 
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
-#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/inlineKlass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/signature.hpp"
 
-// ciObjArrayKlass
+// ciRefArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
 // whose Klass part is an ObjArrayKlass.
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::ciObjArrayKlass
+// ciRefArrayKlass::ciRefArrayKlass
 //
 // Constructor for loaded object array klasses.
-ciObjArrayKlass::ciObjArrayKlass(Klass* k) : ciArrayKlass(k) {
-  assert(get_Klass()->is_objArray_klass(), "wrong type");
-  Klass* element_Klass = get_ObjArrayKlass()->bottom_klass();
-  _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
-  assert(_base_element_klass->is_instance_klass() ||
-         _base_element_klass->is_type_array_klass() ||
-         _base_element_klass->is_flat_array_klass(), "bad base klass");
-  if (dimension() == 1) {
-    _element_klass = _base_element_klass;
-  } else {
-    _element_klass = nullptr;
-  }
-  if (!ciObjectFactory::is_initialized()) {
-    assert(_element_klass->is_java_lang_Object(), "only arrays of object are shared");
-  }
+ciRefArrayKlass::ciRefArrayKlass(Klass* k) : ciObjArrayKlass(k) {
+  assert(get_Klass()->is_refArray_klass(), "wrong type");
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::ciObjArrayKlass
+// ciRefArrayKlass::ciRefArrayKlass
 //
 // Constructor for unloaded object array klasses.
-ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
+ciRefArrayKlass::ciRefArrayKlass(ciSymbol* array_name,
                                  ciKlass* base_element_klass,
                                  int dimension)
-  : ciArrayKlass(array_name,
-                 dimension, T_OBJECT) {
-  _base_element_klass = base_element_klass;
-  assert(_base_element_klass->is_instance_klass() ||
-         _base_element_klass->is_type_array_klass() ||
-         _base_element_klass->is_flat_array_klass(), "bad base klass");
-  if (dimension == 1) {
-    _element_klass = base_element_klass;
-  } else {
-    _element_klass = nullptr;
-  }
-}
+  : ciObjArrayKlass(array_name, base_element_klass, dimension) {}
+
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::element_klass
-//
-// What is the one-level element type of this array?
-ciKlass* ciObjArrayKlass::element_klass() {
-  if (_element_klass == nullptr) {
-    assert(dimension() > 1, "_element_klass should not be null");
-    // Produce the element klass.
-    if (is_loaded()) {
-      VM_ENTRY_MARK;
-      Klass* element_Klass = get_ObjArrayKlass()->element_klass();
-      _element_klass = CURRENT_THREAD_ENV->get_klass(element_Klass);
-    } else {
-      VM_ENTRY_MARK;
-      // We are an unloaded array klass.  Attempt to fetch our
-      // element klass by name.
-      _element_klass = CURRENT_THREAD_ENV->get_klass_by_name_impl(
-                          this,
-                          constantPoolHandle(),
-                          construct_array_name(base_element_klass()->name(),
-                                               dimension() - 1),
-                          false);
-    }
-  }
-  return _element_klass;
-}
-
-// ------------------------------------------------------------------
-// ciObjArrayKlass::construct_array_name
+// ciRefArrayKlass::construct_array_name
 //
 // Build an array name from an element name and a dimension.
-ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
+ciSymbol* ciRefArrayKlass::construct_array_name(ciSymbol* element_name,
                                                 int dimension) {
   EXCEPTION_CONTEXT;
   int element_len = element_name->utf8_length();
@@ -133,10 +83,10 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::make_impl
+// ciRefArrayKlass::make_impl
 //
 // Implementation of make.
-ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
+ciArrayKlass* ciRefArrayKlass::make_impl(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
@@ -176,21 +126,38 @@ ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_ty
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::make
+// ciRefArrayKlass::make
 //
 // Make an array klass corresponding to the specified primitive type.
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
+ciArrayKlass* ciRefArrayKlass::make(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
   GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type, null_free, atomic);)
 }
 
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+ciArrayKlass* ciRefArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
-    klass = ciObjArrayKlass::make(klass, /* refined_type = */ false);
+    klass = ciRefArrayKlass::make(klass, /* refined_type = */ false);
   }
   return klass->as_array_klass();
 }
 
-ciKlass* ciObjArrayKlass::exact_klass() {
-  return (is_loaded() && is_refined()) ? this : nullptr;
+ciKlass* ciRefArrayKlass::exact_klass() {
+  if (!is_loaded()) {
+    return nullptr;
+  }
+  ciType* base = base_element_type();
+  if (base->is_instance_klass()) {
+    ciInstanceKlass* ik = base->as_instance_klass();
+    // Even though MyValue is final, [LMyValue is only exact if the array
+    // is null-free due to null-free [LMyValue <: null-able [LMyValue.
+    if (ik->is_inlinetype() && !is_elem_null_free()) {
+      return nullptr;
+    }
+    if (ik->exact_klass() != nullptr) {
+      return this;
+    }
+  } else if (base->is_primitive_type()) {
+    return this;
+  }
+  return nullptr;
 }

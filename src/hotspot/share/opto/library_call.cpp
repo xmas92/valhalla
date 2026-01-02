@@ -38,6 +38,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/layoutKind.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
@@ -4987,7 +4988,7 @@ Node* LibraryCallKit::load_default_refined_array_klass(Node* klass_node, bool ty
       phi->add_req(klass_node);
     }
   }
-  Node* adr_refined_klass = basic_plus_adr(klass_node, in_bytes(ObjArrayKlass::next_refined_array_klass_offset()));
+  Node* adr_refined_klass = basic_plus_adr(klass_node, in_bytes(MetaObjArrayKlass::default_refined_array_klass_offset()));
   Node* refined_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), adr_refined_klass, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
 
   // Can be null if not initialized yet, just deopt

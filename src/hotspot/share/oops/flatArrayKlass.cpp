@@ -55,12 +55,13 @@
 
 // Allocation...
 
-FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk) :
-                ObjArrayKlass(1, element_klass, name, Kind, props, markWord::flat_array_prototype(lk)) {
+FlatArrayKlass::FlatArrayKlass(MetaObjArrayKlass* meta_klass, ArrayProperties props, LayoutKind lk) :
+                ObjArrayKlass(meta_klass, Kind, props, markWord::flat_array_prototype(lk)) {
+  assert(dimension() == 1, "Must be");
+  Klass* element_klass = this->element_klass();
   assert(element_klass->is_inline_klass(), "Expected Inline");
   assert(LayoutKindHelper::is_flat(lk), "Must be a flat layout");
 
-  set_element_klass(InlineKlass::cast(element_klass));
   set_class_loader_data(element_klass->class_loader_data());
   set_layout_kind(lk);
 
@@ -96,12 +97,12 @@ FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperti
 #endif
 }
 
-FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties props, LayoutKind lk, TRAPS) {
+FlatArrayKlass* FlatArrayKlass::allocate_flatArray_klass(MetaObjArrayKlass* meta_klass, ArrayProperties props, LayoutKind lk, TRAPS) {
   guarantee((!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()), "Really ?!");
   assert(UseArrayFlattening, "Flatten array required");
   assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
 
-  InlineKlass* element_klass = InlineKlass::cast(eklass);
+  InlineKlass* element_klass = InlineKlass::cast(meta_klass->element_klass());
   assert(element_klass->must_be_atomic() || (!AlwaysAtomicAccesses), "Atomic by-default");
 
   // Eagerly allocate the direct array supertype.
@@ -112,10 +113,9 @@ FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties pr
     super_klass = element_klass->array_klass(CHECK_NULL);
   }
 
-  Symbol* name = ArrayKlass::create_element_klass_array_name(element_klass, CHECK_NULL);
   ClassLoaderData* loader_data = element_klass->class_loader_data();
   int size = ArrayKlass::static_size(FlatArrayKlass::header_size());
-  FlatArrayKlass* vak = new (loader_data, size, THREAD) FlatArrayKlass(element_klass, name, props, lk);
+  FlatArrayKlass* vak = new (loader_data, size, THREAD) FlatArrayKlass(meta_klass, props, lk);
 
   ModuleEntry* module = vak->module();
   assert(module != nullptr, "No module entry for array");
@@ -135,7 +135,7 @@ void FlatArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 // Oops allocation...
-objArrayOop FlatArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
+objArrayOop FlatArrayKlass::allocate_instance(int length, TRAPS) {
   assert(UseArrayFlattening, "Must be enabled");
   check_array_allocation_length(length, max_elements(), CHECK_NULL);
   int size = flatArrayOopDesc::object_size(layout_helper(), length);

@@ -74,7 +74,7 @@ public:
   bool is_in(const void* p) const override;
   bool requires_barriers(stackChunkOop obj) const override;
 
-  oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
+  oop array_allocate(ArrayKlass* klass, size_t size, int length, bool do_zero, TRAPS) override;
   HeapWord* mem_allocate(size_t size) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,

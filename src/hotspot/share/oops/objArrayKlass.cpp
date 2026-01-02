@@ -52,17 +52,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* k, Symbol* name, ArrayKlass::ArrayProperties props,
-                                       TRAPS) {
-  assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
-      "array klasses must be same size as InstanceKlass");
-
-  int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
-
-  return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name, Kind, props, ArrayKlass::is_null_restricted(props) ? markWord::null_free_array_prototype() : markWord::prototype());
-}
-
 Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klass* element_klass) {
   ResourceMark rm(current);
   char* name_str = element_klass->name()->as_C_string();
@@ -82,71 +71,16 @@ Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klas
   return SymbolTable::new_symbol(new_str);
 }
 
-
-ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                      int n, Klass* element_klass,  TRAPS) {
-
-  // Eagerly allocate the direct array supertype.
-  Klass* super_klass = nullptr;
-  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
-    assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
-    Klass* element_super = element_klass->super();
-    if (element_super != nullptr) {
-      // The element type has a direct super.  E.g., String[] has direct super of Object[].
-      // Also, see if the element has secondary supertypes.
-      // We need an array type for each before creating this array type.
-      super_klass = element_super->array_klass(CHECK_NULL);
-      const Array<Klass*>* element_supers = element_klass->secondary_supers();
-      for (int i = element_supers->length() - 1; i >= 0; i--) {
-        Klass* elem_super = element_supers->at(i);
-        elem_super->array_klass(CHECK_NULL);
-      }
-      // Fall through because inheritance is acyclic and we hold the global recursive lock to allocate all the arrays.
-    } else {
-      // The element type is already Object.  Object[] has direct super of Object.
-      super_klass = vmClasses::Object_klass();
-    }
-  }
-
-  // Create type name for klass.
-  Symbol* name = create_element_klass_array_name(THREAD, element_klass);
-
-  // Initialize instance variables
-  ObjArrayKlass* oak = ObjArrayKlass::allocate_klass(loader_data, n, element_klass, name, ArrayProperties::INVALID, CHECK_NULL);
-
-  ModuleEntry* module = oak->module();
-  assert(module != nullptr, "No module entry for array");
-
-  // Call complete_create_array_klass after all instance variables has been initialized.
-  ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_NULL);
-
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (null) class loader.
-  // Do this step after creating the mirror so that if the
-  // mirror creation fails, loaded_classes_do() doesn't find
-  // an array class without a mirror.
-  loader_data->add_class(oak);
-
-  return oak;
-}
-
-ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mk) :
-ArrayKlass(name, kind, props, mk) {
+ObjArrayKlass::ObjArrayKlass(MetaObjArrayKlass* meta_klass, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mk) :
+ArrayKlass(meta_klass->name(), kind, props, mk), _meta_klass(meta_klass) {
+  Klass* const element_klass = meta_klass->element_klass();
+  const int n = meta_klass->dimension();
   set_dimension(n);
   set_element_klass(element_klass);
-  set_next_refined_klass_klass(nullptr);
   set_properties(props);
 
-  Klass* bk;
-  if (element_klass->is_objArray_klass()) {
-    assert(!element_klass->is_refined_objArray_klass(), "no such mechanism yet");
-    bk = ObjArrayKlass::cast(element_klass)->bottom_klass();
-  } else {
-    assert(!element_klass->is_refArray_klass(), "Sanity");
-    bk = element_klass;
-  }
+  Klass* const bk = bottom_klass();
   assert(bk != nullptr && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
-  set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
 
   if (element_klass->is_array_klass()) {
@@ -175,97 +109,12 @@ size_t ObjArrayKlass::oop_size(oop obj) const {
   return obj->is_flatArray() ? flatArrayOop(obj)->object_size(layout_helper()) : refArrayOop(obj)->object_size();
 }
 
-ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProperties properties) {
-  // TODO FIXME: the layout selection should take the array size in consideration
-  // to avoid creation of arrays too big to be handled by the VM. See JDK-8233189
-  if (!UseArrayFlattening || element->is_array_klass() || element->is_identity_class() || element->is_abstract()) {
-    return ArrayDescription(RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-  }
-  InlineKlass* vk = InlineKlass::cast(element);
-  if (!vk->maybe_flat_in_array()) {
-    return ArrayDescription(RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-  }
-
-  assert(vk->is_final(), "Flat layouts below require monomorphic elements");
-  if (is_null_restricted(properties)) {
-    if (is_non_atomic(properties)) {
-      // Null-restricted + non-atomic
-      if (vk->has_non_atomic_layout()) {
-        return ArrayDescription(FlatArrayKlassKind, properties, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->has_atomic_layout()) {
-        return ArrayDescription(FlatArrayKlassKind, properties, LayoutKind::NULL_FREE_ATOMIC_FLAT);
-      } else {
-        return ArrayDescription(RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-      }
-    } else {
-      // Null-restricted + atomic
-      if (vk->is_naturally_atomic() && vk->has_non_atomic_layout()) {
-        return ArrayDescription(FlatArrayKlassKind, properties, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->has_atomic_layout()) {
-        return ArrayDescription(FlatArrayKlassKind, properties, LayoutKind::NULL_FREE_ATOMIC_FLAT);
-      } else {
-        return ArrayDescription(RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-      }
-    }
-  } else {
-    // nullable implies atomic, so the non-atomic property is ignored
-    if (vk->has_nullable_atomic_layout()) {
-      return ArrayDescription(FlatArrayKlassKind, properties, LayoutKind::NULLABLE_ATOMIC_FLAT);
-    } else {
-      return ArrayDescription(RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-    }
-  }
-}
-
-ObjArrayKlass* ObjArrayKlass::allocate_klass_with_properties(ArrayKlass::ArrayProperties props, TRAPS) {
-  assert(ArrayKlass::is_null_restricted(props) || !ArrayKlass::is_non_atomic(props), "only null-restricted array can be non-atomic");
-  ObjArrayKlass* ak = nullptr;
-  ArrayDescription ad = ObjArrayKlass::array_layout_selection(element_klass(), props);
-  switch (ad._kind) {
-    case Klass::RefArrayKlassKind: {
-      ak = RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), ad._properties, CHECK_NULL);
-      break;
-    }
-    case Klass::FlatArrayKlassKind: {
-      assert(dimension() == 1, "Flat arrays can only be dimension 1 arrays");
-      ak = FlatArrayKlass::allocate_klass(element_klass(), ad._properties, ad._layout_kind, CHECK_NULL);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
-  return ak;
-}
-
-objArrayOop ObjArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  ObjArrayKlass* ak = klass_with_properties(props, THREAD);
-  size_t size = 0;
-  switch(ak->kind()) {
-    case Klass::RefArrayKlassKind:
-      size = refArrayOopDesc::object_size(length);
-      break;
-    case Klass::FlatArrayKlassKind:
-      size = flatArrayOopDesc::object_size(ak->layout_helper(), length);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  assert(size != 0, "Sanity check");
-  objArrayOop array = (objArrayOop)Universe::heap()->array_allocate(
-    ak, size, length,
-    /* do_zero */ true, CHECK_NULL);
-  assert(array->is_refArray() || array->is_flatArray(), "Must be");
-  return array;
-}
-
 oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
+  assert(is_refArray_klass() || is_flatArray_klass(), "Must be");
   int length = *sizes;
   ArrayKlass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
-  ObjArrayKlass* oak = klass_with_properties(ArrayProperties::DEFAULT, CHECK_NULL);
-  assert(oak->is_refArray_klass() || oak->is_flatArray_klass(), "Must be");
-  objArrayOop array = oak->allocate_instance(length, ArrayProperties::DEFAULT, CHECK_NULL);
+  objArrayOop array = allocate_instance(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
   if (rank > 1) {
     if (length != 0) {
@@ -347,35 +196,22 @@ void ObjArrayKlass::initialize(TRAPS) {
 
 void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   ArrayKlass::metaspace_pointers_do(it);
+  // Unclear if the back pointer is fine and/or required.
+  it->push(&_meta_klass);
   it->push(&_element_klass);
-  it->push(&_bottom_klass);
-  if (_next_refined_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
-    it->push(&_next_refined_array_klass);
-  }
 }
 
 #if INCLUDE_CDS
 void ObjArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   ArrayKlass::restore_unshareable_info(loader_data, protection_domain, CHECK);
-  if (_next_refined_array_klass != nullptr) {
-    _next_refined_array_klass->restore_unshareable_info(loader_data, protection_domain, CHECK);
-  }
 }
 
 void ObjArrayKlass::remove_unshareable_info() {
   ArrayKlass::remove_unshareable_info();
-  if (_next_refined_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
-    _next_refined_array_klass->remove_unshareable_info();
-  } else {
-    _next_refined_array_klass = nullptr;
-  }
 }
 
 void ObjArrayKlass::remove_java_mirror() {
   ArrayKlass::remove_java_mirror();
-  if (_next_refined_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
-    _next_refined_array_klass->remove_java_mirror();
-  }
 }
 #endif // INCLUDE_CDS
 
@@ -402,41 +238,6 @@ PackageEntry* ObjArrayKlass::package() const {
   assert(bottom_klass() != nullptr, "ObjArrayKlass returned unexpected null bottom_klass");
   return bottom_klass()->package();
 }
-
-ObjArrayKlass* ObjArrayKlass::klass_with_properties(ArrayKlass::ArrayProperties props, TRAPS) {
-  assert(props != ArrayProperties::INVALID, "Sanity check");
-  ArrayDescription ad = array_layout_selection(element_klass(), props);
-  props = ad._properties;
-
-  if (properties() == props) {
-    assert(is_refArray_klass() || is_flatArray_klass(), "Must be a concrete array klass");
-    return this;
-  }
-
-  ObjArrayKlass* ak = next_refined_array_klass_acquire();
-  if (ak == nullptr) {
-    // Ensure atomic creation of refined array klasses
-    RecursiveLocker rl(MultiArray_lock, THREAD);
-
-    if (next_refined_array_klass() == nullptr) {
-      ObjArrayKlass* first = this;
-      if (!is_refArray_klass() && !is_flatArray_klass() && props != ArrayKlass::ArrayProperties::DEFAULT) {
-        // Make sure that the first entry in the linked list is always the default refined klass because
-        // C2 relies on this for a fast lookup (see LibraryCallKit::load_default_refined_array_klass).
-        first = allocate_klass_with_properties(ArrayKlass::ArrayProperties::DEFAULT, THREAD);
-        release_set_next_refined_klass(first);
-      }
-      ak = allocate_klass_with_properties(props, THREAD);
-      first->release_set_next_refined_klass(ak);
-    }
-  }
-
-  ak = next_refined_array_klass();
-  assert(ak != nullptr, "should be set");
-  THREAD->check_possible_safepoint();
-  return ak->klass_with_properties(props, THREAD); // why not CHECK_NULL ?
-}
-
 
 // Printing
 
@@ -471,7 +272,6 @@ void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
 const char* ObjArrayKlass::internal_name() const {
   return external_name();
 }
-
 
 // Verification
 

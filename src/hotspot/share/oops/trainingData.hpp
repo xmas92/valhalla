@@ -296,6 +296,9 @@ private:
       if (k->is_objArray_klass()) {
         k = ObjArrayKlass::cast(k)->bottom_klass();
       }
+      if (k->is_metaObjArray_klass()) {
+        k = MetaObjArrayKlass::cast(k)->bottom_klass();
+      }
       if (k->is_instance_klass()) {
         return InstanceKlass::cast(k)->is_loaded();
       }

@@ -25,23 +25,22 @@
 #ifndef SHARE_VM_CI_CIFLATARRAY_HPP
 #define SHARE_VM_CI_CIFLATARRAY_HPP
 
-#include "ci/ciArray.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciClassList.hpp"
-#include "oops/flatArrayOop.hpp"
 
 // ciFlatArray
 //
 // This class represents a flatArrayOop in the HotSpot virtual machine.
-class ciFlatArray : public ciArray {
+class ciFlatArray : public ciObjArray {
   CI_PACKAGE_ACCESS
 
 protected:
-  ciFlatArray(flatArrayHandle h_o) : ciArray(h_o) {}
+  ciFlatArray(flatArrayHandle h_o) : ciObjArray(h_o) {}
 
-  const char* type_string() { return "ciFlatArray"; }
+  const char* type_string() override { return "ciFlatArray"; }
 
 public:
-  bool is_flat()      { return true; }
+  bool is_flat_array() override{ return true; }
 };
 
 #endif // SHARE_VM_CI_CIFLATARRAY_HPP

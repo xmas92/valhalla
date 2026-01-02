@@ -58,6 +58,8 @@ class InstanceRefKlass: public InstanceKlass {
  public:
   InstanceRefKlass();
 
+  InstanceRefKlass* java_klass() override { return this; }
+
   DEBUG_ONLY(bool is_reference_instance_klass_slow() const override { return true; })
 
   // Oop fields (and metadata) iterators

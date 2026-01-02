@@ -74,7 +74,7 @@ class Klass : public Metadata {
      InstanceClassLoaderKlassKind,
      InstanceStackChunkKlassKind,
      TypeArrayKlassKind,
-     ObjArrayKlassKind,
+     MetaObjArrayKlassKind,
      RefArrayKlassKind,
      FlatArrayKlassKind,
      UnknownKlassKind
@@ -609,6 +609,9 @@ public:
     return uncached_lookup_method(name, signature, OverpassLookupMode::find);
   }
 
+  // Get Java Klass, may be different from the VM Klass.
+  virtual Klass* java_klass() { return this; }
+
   // array class with specific rank
   virtual ArrayKlass* array_klass(int rank, TRAPS) = 0;
 
@@ -699,6 +702,7 @@ public:
   virtual bool is_class_loader_instance_klass_slow() const { return false; }
   virtual bool is_stack_chunk_instance_klass_slow()  const { return false; }
   virtual bool is_array_klass_slow()                 const { return false; }
+  virtual bool is_metaObjArray_klass_slow()          const { return false; }
   virtual bool is_objArray_klass_slow()              const { return false; }
   virtual bool is_refArray_klass_slow()              const { return false; }
   virtual bool is_typeArray_klass_slow()             const { return false; }
@@ -726,10 +730,10 @@ public:
   bool is_stack_chunk_instance_klass()  const { return assert_same_query(_kind == InstanceStackChunkKlassKind, is_stack_chunk_instance_klass_slow()); }
   bool is_array_klass()                 const { return assert_same_query(_kind >= TypeArrayKlassKind, is_array_klass_slow()); }
   bool is_typeArray_klass()             const { return assert_same_query(_kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
-  bool is_objArray_klass()              const { return assert_same_query(_kind >= ObjArrayKlassKind,  is_objArray_klass_slow()); }
+  bool is_metaObjArray_klass()          const { return assert_same_query(_kind == MetaObjArrayKlassKind,  is_metaObjArray_klass_slow()); }
+  bool is_objArray_klass()              const { return assert_same_query(_kind >= RefArrayKlassKind,  is_objArray_klass_slow()); }
   bool is_refArray_klass()              const { return assert_same_query(_kind == RefArrayKlassKind, is_refArray_klass_slow()); }
   bool is_flatArray_klass()             const { return assert_same_query(_kind == FlatArrayKlassKind, is_flatArray_klass_slow()); }
-  bool is_refined_objArray_klass()      const { return is_refArray_klass() || is_flatArray_klass(); }
   #undef assert_same_query
 
   inline bool is_null_free_array_klass() const { return !is_typeArray_klass() && layout_helper_is_null_free(layout_helper()); }

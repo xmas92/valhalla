@@ -69,7 +69,7 @@
   f(Method) \
   f(MethodData) \
   f(MethodCounters) \
-  f(ObjArrayKlass) \
+  f(MetaObjArrayKlass) \
   f(TypeArrayKlass) \
   f(FlatArrayKlass) \
   f(InlineKlass) \

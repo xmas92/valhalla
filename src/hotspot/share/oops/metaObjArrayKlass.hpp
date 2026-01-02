@@ -22,62 +22,63 @@
  *
  */
 
-#ifndef SHARE_OOPS_OBJARRAYKLASS_HPP
-#define SHARE_OOPS_OBJARRAYKLASS_HPP
+#ifndef SHARE_OOPS_METAOBJARRAYKLASS_HPP
+#define SHARE_OOPS_METAOBJARRAYKLASS_HPP
 
 #include "oops/arrayKlass.hpp"
-#include "oops/metaObjArrayKlass.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
 
 // ObjArrayKlass is the klass for objArrays
 
-class ObjArrayKlass : public ArrayKlass {
+class MetaObjArrayKlass : public ArrayKlass {
   friend class Deoptimization;
   friend class JVMCIVMStructs;
   friend class oopFactory;
   friend class VMStructs;
-  friend class MetaObjArrayKlass;
+
+ public:
+  static const KlassKind Kind = MetaObjArrayKlassKind;
 
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ObjArrayKlass::metaspace_pointers_do().
+  Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
  protected:
-  MetaObjArrayKlass* _meta_klass;
-  Klass* _element_klass; // The klass of the elements of this array type
+  Klass* _element_klass;            // The klass of the elements of this array type
+  ObjArrayKlass* volatile _refined_klasses[VALID_PROPS_COUNT];
 
  protected:
   // Constructor
-  ObjArrayKlass(MetaObjArrayKlass* meta_klass, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mw);
+  MetaObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind, ArrayKlass::ArrayProperties props, markWord mw);
+  static MetaObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, ArrayKlass::ArrayProperties props, TRAPS);
 
-  virtual objArrayOop allocate_instance(int length, TRAPS) = 0;
+  static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
+  ObjArrayKlass* allocate_klass_with_properties(ArrayKlass::ArrayProperties props, TRAPS);
+  virtual objArrayOop allocate_instance(int length, ArrayProperties props, TRAPS);
 
    // Create array_name for element klass
   static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
 
  public:
   // For dummy objects
-  ObjArrayKlass() {}
-
-  MetaObjArrayKlass* java_klass() override { return meta_klass(); }
+  MetaObjArrayKlass() {}
 
   virtual Klass* element_klass() const      { return _element_klass; }
-  void set_element_klass(Klass* k)  { _element_klass = k; }
+  virtual void set_element_klass(Klass* k)  { _element_klass = k; }
 
-  MetaObjArrayKlass* meta_klass() const { return _meta_klass; }
+  ObjArrayKlass* klass_with_properties(ArrayKlass::ArrayProperties properties, TRAPS);
+  static ByteSize default_refined_array_klass_offset() {
+    return byte_offset_of(MetaObjArrayKlass, _refined_klasses) + in_ByteSize(sizeof(ObjArrayKlass*) * DEFAULT);
+  }
 
   // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
+  static ByteSize element_klass_offset() { return byte_offset_of(MetaObjArrayKlass, _element_klass); }
 
-  Klass* bottom_klass() const       { return meta_klass()->bottom_klass(); }
-
-  ArrayKlass* array_klass(int n, TRAPS) override { ShouldNotReachHere(); }
-  ArrayKlass* array_klass_or_null(int n) override { ShouldNotReachHere(); }
-
-  ArrayKlass* array_klass(TRAPS) override  { ShouldNotReachHere(); }
-  ArrayKlass* array_klass_or_null() override  { ShouldNotReachHere(); }
+  Klass* bottom_klass() const       { return _bottom_klass; }
+  void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
+  Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
   ModuleEntry* module() const override;
   PackageEntry* package() const override;
@@ -86,14 +87,15 @@ class ObjArrayKlass : public ArrayKlass {
   bool can_be_primary_super_slow() const override;
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
-  DEBUG_ONLY(bool is_objArray_klass_slow() const override { return true; })
+  DEBUG_ONLY(bool is_metaObjArray_klass_slow() const override { return true; })
   size_t oop_size(oop obj) const override;
 
   // Allocation
-  oop multi_allocate(int rank, jint* sizes, TRAPS) override;
+  static MetaObjArrayKlass*
+  allocate_metaObjArray_klass(ClassLoaderData *loader_data, int n,
+                              Klass *element_klass, TRAPS);
 
-  // Copying
-  void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;
+  oop multi_allocate(int rank, jint* sizes, TRAPS) override;
 
   // Compute protection domain
   oop protection_domain() const override { return bottom_klass()->protection_domain(); }
@@ -107,51 +109,21 @@ class ObjArrayKlass : public ArrayKlass {
 #endif
 
  public:
-  static ObjArrayKlass* cast(Klass* k) {
-    return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
+  static MetaObjArrayKlass* cast(Klass* k) {
+    return const_cast<MetaObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }
 
-  static const ObjArrayKlass* cast(const Klass* k) {
-    assert(k->is_objArray_klass(), "cast to ObjArrayKlass");
-    return static_cast<const ObjArrayKlass*>(k);
+  static const MetaObjArrayKlass* cast(const Klass* k) {
+    assert(k->is_metaObjArray_klass(), "cast to MetaObjArrayKlass");
+    return static_cast<const MetaObjArrayKlass*>(k);
   }
 
   // Sizing
-  static int header_size()                { return sizeof(ObjArrayKlass)/wordSize; }
+  static int header_size()                { return sizeof(MetaObjArrayKlass)/wordSize; }
   int size() const override               { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
   void initialize(TRAPS) override;
-
-  // Oop fields (and metadata) iterators
-  //
-  // The ObjArrayKlass iterators also visits the Object's klass.
-
-  // Iterate over oop elements and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
-
-  // Iterate over oop elements and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-
-  // Iterate over oop elements within mr, and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Iterate over oop elements within [start, end), and metadata.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
-
- public:
-  // Iterate over all oop elements.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
-
- private:
-  // Iterate over all oop elements with indices within mr.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
   u2 compute_modifier_flags() const override;
@@ -174,4 +146,4 @@ class ObjArrayKlass : public ArrayKlass {
   void oop_verify_on(oop obj, outputStream* st) override;
 };
 
-#endif // SHARE_OOPS_OBJARRAYKLASS_HPP
+#endif // SHARE_OOPS_METAOBJARRAYKLASS_HPP

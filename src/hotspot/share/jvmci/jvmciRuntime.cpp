@@ -1629,8 +1629,9 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
 // Note: the logic of this method should mirror the logic of
 // constantPoolOopDesc::verify_constant_pool_resolve.
 bool JVMCIRuntime::check_klass_accessibility(Klass* accessing_klass, Klass* resolved_klass) {
-  if (accessing_klass->is_objArray_klass()) {
-    accessing_klass = ObjArrayKlass::cast(accessing_klass)->bottom_klass();
+  precond(!accessing_klass->is_objArray_klass());
+  if (accessing_klass->is_metaObjArray_klass()) {
+    accessing_klass = MetaObjArrayKlass::cast(accessing_klass)->bottom_klass();
   }
   if (!accessing_klass->is_instance_klass()) {
     return true;

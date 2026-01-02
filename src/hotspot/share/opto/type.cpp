@@ -3973,7 +3973,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     const TypeOopPtr* etype = TypeOopPtr::make_from_klass_raw(klass->as_array_klass()->element_klass(), trust_interfaces);
-    bool is_flat = o->as_array()->is_flat();
+    bool is_flat = o->as_array()->is_flat_array();
     bool is_null_free = o->as_array()->is_null_free();
     if (is_null_free) {
       etype = etype->join_speculative(TypePtr::NOTNULL)->is_oopptr();

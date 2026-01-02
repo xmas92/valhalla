@@ -29,6 +29,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -38,6 +39,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
@@ -413,8 +415,10 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_flatArray_klass()) {
       return new (arena()) ciFlatArrayKlass(k);
-    } else if (k->is_refArray_klass() || k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(k);
+    } else if (k->is_refArray_klass()) {
+      return new (arena()) ciRefArrayKlass(k);
+    } else if (k->is_metaObjArray_klass()) {
+      return new (arena()) ciMetaObjArrayKlass(k);
     } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(k);
     }
@@ -534,7 +538,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
       // The element klass is a TypeArrayKlass.
       element_klass = ciTypeArrayKlass::make(element_type);
     }
-    new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);
+    new_klass = new (arena()) ciMetaObjArrayKlass(name, element_klass, dimension);
   } else {
     jobject loader_handle = nullptr;
     if (accessing_klass != nullptr) {

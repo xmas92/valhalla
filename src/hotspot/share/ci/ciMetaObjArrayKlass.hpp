@@ -22,17 +22,17 @@
  *
  */
 
-#ifndef SHARE_CI_CIOBJARRAYKLASS_HPP
-#define SHARE_CI_CIOBJARRAYKLASS_HPP
+#ifndef SHARE_CI_CIMETAOBJARRAYKLASS_HPP
+#define SHARE_CI_CIMETAOBJARRAYKLASS_HPP
 
 #include "ci/ciArrayKlass.hpp"
-#include "oops/objArrayKlass.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 
-// ciObjArrayKlass
+// ciMetaObjArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
 // whose Klass part is an ObjArrayKlass.
-class ciObjArrayKlass : public ciArrayKlass {
+class ciMetaObjArrayKlass : public ciArrayKlass {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
 
@@ -41,20 +41,20 @@ private:
   ciKlass* _base_element_klass;
 
 protected:
-  ciObjArrayKlass(Klass* k);
-  ciObjArrayKlass(ciSymbol* array_name,
-                  ciKlass* base_element_klass,
-                  int dimension);
+  ciMetaObjArrayKlass(Klass* k);
+  ciMetaObjArrayKlass(ciSymbol* array_name,
+                      ciKlass* base_element_klass,
+                      int dimension);
 
-  ObjArrayKlass* get_ObjArrayKlass() {
-    return  ObjArrayKlass::cast(get_Klass());
+  MetaObjArrayKlass* get_MetaObjArrayKlass() {
+    return MetaObjArrayKlass::cast(get_Klass());
   }
 
   static ciArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false, bool null_free = false, bool atomic = true);
   static ciSymbol* construct_array_name(ciSymbol* element_name,
                                         int       dimension);
 
-  const char* type_string() { return "ciObjArrayKlass"; }
+  const char* type_string() { return "ciMetaObjArrayKlass"; }
 
   oop     loader()        { return _base_element_klass->loader(); }
   jobject loader_handle() { return _base_element_klass->loader_handle(); }
@@ -79,4 +79,4 @@ public:
   }
 };
 
-#endif // SHARE_CI_CIOBJARRAYKLASS_HPP
+#endif // SHARE_CI_CIMETAOBJARRAYKLASS_HPP

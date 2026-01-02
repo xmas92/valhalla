@@ -41,19 +41,9 @@
 // ciFlatArrayKlass::ciFlatArrayKlass
 //
 // Constructor for loaded inline type array klasses.
-ciFlatArrayKlass::ciFlatArrayKlass(Klass* h_k) : ciArrayKlass(h_k) {
+ciFlatArrayKlass::ciFlatArrayKlass(Klass* h_k) : ciObjArrayKlass(h_k) {
   assert(get_Klass()->is_flatArray_klass(), "wrong type");
-  InlineKlass* element_Klass = get_FlatArrayKlass()->element_klass();
-  _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
-  assert(_base_element_klass->is_inlinetype(), "bad base klass");
-  if (dimension() == 1) {
-    _element_klass = _base_element_klass;
-  } else {
-    _element_klass = nullptr;
-  }
-  if (!ciObjectFactory::is_initialized()) {
-    assert(_element_klass->is_java_lang_Object(), "only arrays of object are shared");
-  }
+  assert(base_element_klass()->is_inlinetype(), "bad base klass");
 }
 
 // ------------------------------------------------------------------
@@ -61,15 +51,8 @@ ciFlatArrayKlass::ciFlatArrayKlass(Klass* h_k) : ciArrayKlass(h_k) {
 //
 // What is the one-level element type of this array?
 ciKlass* ciFlatArrayKlass::element_klass() {
-  if (_element_klass == nullptr) {
-    assert(dimension() > 1, "_element_klass should not be nullptr");
-    assert(is_loaded(), "FlatArrayKlass must be loaded");
-    // Produce the element klass.
-    VM_ENTRY_MARK;
-    Klass* element_Klass = get_FlatArrayKlass()->element_klass();
-    _element_klass = CURRENT_THREAD_ENV->get_klass(element_Klass);
-  }
-  return _element_klass;
+  assert(is_loaded(), "FlatArrayKlass must be loaded");
+  return ciObjArrayKlass::element_klass();
 }
 
 ciKlass* ciFlatArrayKlass::exact_klass() {

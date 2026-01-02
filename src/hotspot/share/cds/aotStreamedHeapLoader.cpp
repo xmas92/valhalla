@@ -39,6 +39,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
@@ -189,14 +190,14 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
 
   Klass* klass = archive_object->klass();
   if (klass->is_mirror_instance_klass()) {
-    heap_object = Universe::heap()->class_allocate(klass, size, CHECK_NULL);
+    heap_object = Universe::heap()->class_allocate(InstanceMirrorKlass::cast(klass), size, CHECK_NULL);
   } else if (klass->is_instance_klass()) {
-    heap_object = Universe::heap()->obj_allocate(klass, size, CHECK_NULL);
+    heap_object = Universe::heap()->obj_allocate(InstanceKlass::cast(klass), size, CHECK_NULL);
   } else {
     assert(klass->is_array_klass(), "must be");
     int length = archive_array_length(archive_object);
     bool do_zero = klass->is_objArray_klass();
-    heap_object = Universe::heap()->array_allocate(klass, size, length, do_zero, CHECK_NULL);
+    heap_object = Universe::heap()->array_allocate(ArrayKlass::cast(klass), size, length, do_zero, CHECK_NULL);
   }
 
   heap_object->set_mark(mark);

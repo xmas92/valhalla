@@ -47,7 +47,9 @@ class ciKlass : public ciType {
   friend class ciObjArrayKlass;
   friend class ciReceiverTypeData;
   friend class ciSignature;
+  friend class ciMetaObjArrayKlass;
   friend class ciFlatArrayKlass;
+  friend class ciRefArrayKlass;
   friend class ciArrayKlass;
 
 private:

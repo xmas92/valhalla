@@ -274,6 +274,7 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
 // Hidden class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
   assert(k != nullptr, "must be valid klass");
+  assert(!k->is_objArray_klass(), "");
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
@@ -475,6 +476,7 @@ static const char* get_type(Klass* k) {
     src_k = k;
   }
 
+  precond(!src_k->is_metaObjArray_klass());
   if (src_k->is_objArray_klass()) {
     src_k = ObjArrayKlass::cast(src_k)->bottom_klass();
     assert(!src_k->is_objArray_klass(), "sanity");
@@ -679,7 +681,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   }
 
 #ifdef DEBUG
-  if (!HAS_PENDING_EXCEPTION && k->is_objArray_klass()) {
+  assert(!k->is_objArrayKlass(), "Should not be Java klass, not VM klass");
+  if (!HAS_PENDING_EXCEPTION && k->is_metaObjArray_klass()) {
     Klass* bottom_klass = ObjArrayKlass::cast(k)->bottom_klass();
     assert(bottom_klass != nullptr, "Should be set");
     assert(bottom_klass->is_instance_klass() || bottom_klass->is_typeArray_klass(), "Sanity check");
@@ -707,6 +710,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
+  assert(!k->is_objArray_klass(), "");
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
   AtomicAccess::release_store(adr, k);
 
@@ -892,7 +896,8 @@ u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
 }
 
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
-  if (!(k->is_instance_klass() || k->is_objArray_klass())) {
+  precond(!k->is_objArray_klass());
+  if (!(k->is_instance_klass() || k->is_metaObjArray_klass())) {
     return;  // short cut, typeArray klass is always accessible
   }
   Klass* holder = this_cp->pool_holder();

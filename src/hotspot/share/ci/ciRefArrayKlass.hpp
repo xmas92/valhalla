@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,49 +22,48 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIFLATARRAYKLASS_HPP
-#define SHARE_VM_CI_CIFLATARRAYKLASS_HPP
+#ifndef SHARE_CI_CIREFARRAYKLASS_HPP
+#define SHARE_CI_CIREFARRAYKLASS_HPP
 
 #include "ci/ciObjArrayKlass.hpp"
-#include "oops/flatArrayKlass.hpp"
+#include "oops/refArrayKlass.hpp"
 
-// ciFlatArrayKlass
+// ciRefArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
-// whose Klass part is a FlatArrayKlass.
-class ciFlatArrayKlass : public ciObjArrayKlass {
+// whose Klass part is an ObjArrayKlass.
+class ciRefArrayKlass : public ciObjArrayKlass {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
 
 protected:
-  ciFlatArrayKlass(Klass* h_k);
+  ciRefArrayKlass(Klass* k);
+  ciRefArrayKlass(ciSymbol* array_name,
+                  ciKlass* base_element_klass,
+                  int dimension);
 
-  const FlatArrayKlass* get_FlatArrayKlass() const {
-    return FlatArrayKlass::cast(get_Klass());
+  RefArrayKlass* get_RefArrayKlass() {
+    return  RefArrayKlass::cast(get_Klass());
   }
 
-  const char* type_string() { return "ciFlatArrayKlass"; }
+  static ciArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false, bool null_free = false, bool atomic = true);
+  static ciSymbol* construct_array_name(ciSymbol* element_name,
+                                        int       dimension);
+
+  const char* type_string() { return "ciRefArrayKlass"; }
 
 public:
-  LayoutKind layout_kind() const { return get_FlatArrayKlass()->layout_kind(); }
-
-  // The one-level type of the array elements.
-  ciKlass* element_klass();
-
-  int log2_element_size() {
-    return Klass::layout_helper_log2_element_size(layout_helper());
-  }
-  int element_byte_size() { return 1 << log2_element_size(); }
-
   // What kind of ciObject is this?
-  bool is_flat_array_klass() const { return true; }
+  bool is_ref_array_klass() const { return true; }
+
+  static ciArrayKlass* make(ciKlass* element_klass, bool refined_type = true, bool null_free = false, bool atomic = true);
+  static ciArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();
 
   virtual bool can_be_inline_array_klass() {
-    return true;
+    return element_klass()->can_be_inline_klass();
   }
 };
 
-
-#endif // SHARE_VM_CI_CIFLATARRAYKLASS_HPP
+#endif // SHARE_CI_CIREFARRAYKLASS_HPP
