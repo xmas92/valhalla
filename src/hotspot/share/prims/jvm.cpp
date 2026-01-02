@@ -851,10 +851,10 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   oop new_obj_oop = nullptr;
   if (obj->is_array()) {
     const int length = ((arrayOop)obj())->length();
-    new_obj_oop = Universe::heap()->array_allocate(klass, size, length,
+    new_obj_oop = Universe::heap()->array_allocate(ArrayKlass::cast(klass), size, length,
                                                    /* do_zero */ true, CHECK_NULL);
   } else {
-    new_obj_oop = Universe::heap()->obj_allocate(klass, size, CHECK_NULL);
+    new_obj_oop = Universe::heap()->obj_allocate(InstanceKlass::cast(klass), size, CHECK_NULL);
   }
 
   HeapAccess<>::clone(obj(), new_obj_oop, size);
@@ -1341,7 +1341,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
     InstanceKlass* ik = InstanceKlass::cast(klass);
     size = ik->local_interfaces()->length();
   } else {
-    assert(klass->is_objArray_klass() || klass->is_typeArray_klass(), "Illegal mirror klass");
+    assert(klass->is_metaObjArray_klass() || klass->is_typeArray_klass(), "Illegal mirror klass");
     size = 2;
   }
 

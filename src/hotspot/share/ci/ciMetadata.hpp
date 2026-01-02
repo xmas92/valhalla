@@ -57,6 +57,7 @@ class ciMetadata: public ciBaseObject {
   virtual bool is_instance_klass() const    { return false; }
   virtual bool is_inlinetype() const        { return false; }
   virtual bool is_array_klass() const       { return false; }
+  virtual bool is_meta_obj_array_klass() const { return false; }
   virtual bool is_obj_array_klass() const   { return false; }
   virtual bool is_flat_array_klass() const  { return false; }
   virtual bool is_ref_array_klass() const   { return false; }
@@ -96,6 +97,10 @@ class ciMetadata: public ciBaseObject {
   ciArrayKlass*            as_array_klass() {
     assert(is_array_klass(), "bad cast");
     return (ciArrayKlass*)this;
+  }
+  ciMetaObjArrayKlass*         as_meta_obj_array_klass() {
+    assert(is_meta_obj_array_klass(), "bad cast");
+    return (ciMetaObjArrayKlass*)this;
   }
   ciObjArrayKlass*         as_obj_array_klass() {
     assert(is_obj_array_klass(), "bad cast");

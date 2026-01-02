@@ -822,7 +822,7 @@ class DumperSupport : AllStatic {
   // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
   // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out to avoid duplicates.
   static bool filter_out_klass(Klass* k) {
-    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+    if (k->is_objArray_klass()) {
       return true;
     }
     return false;
@@ -1398,6 +1398,7 @@ void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, InstanceKlas
 
 // creates HPROF_GC_CLASS_DUMP record for the given array class
 void DumperSupport::dump_array_class(AbstractDumpWriter* writer, Klass* k) {
+  precond(!k->is_metaObjArray_klass());
   InstanceKlass* ik = nullptr; // bottom class for object arrays, null for primitive type arrays
   if (k->is_objArray_klass()) {
     Klass *bk = ObjArrayKlass::cast(k)->bottom_klass();

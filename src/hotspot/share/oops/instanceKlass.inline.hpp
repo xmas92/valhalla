@@ -83,11 +83,11 @@ inline InlineKlass* InstanceKlass::get_inline_type_field_klass_or_null(int idx) 
   return k;
 }
 
-inline ObjArrayKlass* InstanceKlass::array_klasses_acquire() const {
+inline MetaObjArrayKlass* InstanceKlass::array_klasses_acquire() const {
   return AtomicAccess::load_acquire(&_array_klasses);
 }
 
-inline void InstanceKlass::release_set_array_klasses(ObjArrayKlass* k) {
+inline void InstanceKlass::release_set_array_klasses(MetaObjArrayKlass* k) {
   AtomicAccess::release_store(&_array_klasses, k);
 }
 

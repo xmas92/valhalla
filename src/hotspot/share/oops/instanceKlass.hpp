@@ -33,7 +33,7 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/refArrayKlass.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
@@ -209,7 +209,7 @@ class InstanceKlass: public Klass {
   // Package this class is defined in
   PackageEntry*   _package_entry;
   // Array classes holding elements of this class.
-  ObjArrayKlass* volatile _array_klasses;
+  MetaObjArrayKlass* volatile _array_klasses;
   // Constant pool for this class.
   ConstantPool* _constants;
   // The InnerClasses attribute and EnclosingMethod attribute. The
@@ -422,10 +422,10 @@ class InstanceKlass: public Klass {
   void set_itable_length(int len)          { _itable_len = len; }
 
   // array klasses
-  ObjArrayKlass* array_klasses() const     { return _array_klasses; }
-  inline ObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
-  inline void release_set_array_klasses(ObjArrayKlass* k); // store with release semantics
-  void set_array_klasses(ObjArrayKlass* k) { _array_klasses = k; }
+  MetaObjArrayKlass* array_klasses() const { return _array_klasses; }
+  inline MetaObjArrayKlass* array_klasses_acquire() const; // load with acquire semantics
+  inline void release_set_array_klasses(MetaObjArrayKlass* k); // store with release semantics
+  void set_array_klasses(MetaObjArrayKlass* k) { _array_klasses = k; }
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -1206,6 +1206,8 @@ public:
   // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
   oop init_lock() const;
+
+  InstanceKlass* java_klass() override { return this; }
 
   // Returns the array class for the n'th dimension
   ArrayKlass* array_klass(int n, TRAPS) override;

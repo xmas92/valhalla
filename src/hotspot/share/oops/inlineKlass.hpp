@@ -105,6 +105,8 @@ class InlineKlass: public InstanceKlass {
   // Constructor
   InlineKlass(const ClassFileParser& parser);
 
+  InlineKlass* java_klass() override { return this; }
+
   // Calculates where the members are supposed to be placed
   address calculate_members_address() const;
 

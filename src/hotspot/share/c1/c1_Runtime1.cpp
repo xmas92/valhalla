@@ -1205,9 +1205,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
         { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
           Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = ek->array_klass(CHECK);
-          if (!k->is_typeArray_klass() && !k->is_refArray_klass() && !k->is_flatArray_klass()) {
-            k = ObjArrayKlass::cast(k)->klass_with_properties(ArrayKlass::ArrayProperties::DEFAULT, THREAD);
-          }
+          k = MetaObjArrayKlass::cast(k)->klass_with_properties(ArrayKlass::ArrayProperties::DEFAULT, THREAD);
           if (k->is_flatArray_klass()) {
             deoptimize_for_flat = true;
           }

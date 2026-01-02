@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,9 @@
  *
  */
 
-#ifndef SHARE_OOPS_ARRAYKLASS_INLINE_HPP
-#define SHARE_OOPS_ARRAYKLASS_INLINE_HPP
+#ifndef SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
+#define SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 
-#include "oops/arrayKlass.hpp"
+#include "oops/metaObjArrayKlass.hpp"
 
-#include "runtime/atomicAccess.hpp"
-
-inline MetaObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
-  return AtomicAccess::load_acquire(&_higher_dimension);
-}
-
-inline void ArrayKlass::release_set_higher_dimension(MetaObjArrayKlass* k) {
-  AtomicAccess::release_store(&_higher_dimension, k);
-}
-
-#endif // SHARE_OOPS_ARRAYKLASS_INLINE_HPP
+#endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

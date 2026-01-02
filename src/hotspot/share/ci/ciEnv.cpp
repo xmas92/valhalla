@@ -98,7 +98,7 @@ VM_CLASSES_DO(VM_CLASS_DEFN)
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = nullptr;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = nullptr;
-ciObjArrayKlass* ciEnv::_unloaded_ciobjarrayklass = nullptr;
+ciMetaObjArrayKlass* ciEnv::_unloaded_ciobjarrayklass = nullptr;
 
 #ifndef PRODUCT
 static bool firstEnv = true;

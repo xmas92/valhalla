@@ -82,6 +82,8 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   assert(!is_in_archivebuilder_buffer(cp_holder), "sanity");
   assert(!is_in_archivebuilder_buffer(resolved_class), "sanity");
 
+  precond(!resolved_class->is_objArray_klass());
+
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
@@ -115,8 +117,8 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
     } else {
       return false;
     }
-  } else if (resolved_class->is_objArray_klass()) {
-    Klass* elem = ObjArrayKlass::cast(resolved_class)->bottom_klass();
+  } else if (resolved_class->is_metaObjArray_klass()) {
+    Klass* elem = MetaObjArrayKlass::cast(resolved_class)->bottom_klass();
     if (elem->is_instance_klass()) {
       return is_class_resolution_deterministic(cp_holder, InstanceKlass::cast(elem));
     } else if (elem->is_typeArray_klass()) {

@@ -25,6 +25,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -76,7 +77,9 @@ ciType* ciArrayKlass::base_element_type() {
   if (is_type_array_klass()) {
     return ciType::make(as_type_array_klass()->element_type());
   } else {
-    ciKlass* ek = as_obj_array_klass()->base_element_klass();
+    ciKlass *ek = is_obj_array_klass()
+                      ? as_obj_array_klass()->base_element_klass()
+                      : as_meta_obj_array_klass()->base_element_klass();
     if (ek->is_type_array_klass()) {
       return ciType::make(ek->as_type_array_klass()->element_type());
     }
@@ -103,8 +106,10 @@ bool ciArrayKlass::is_leaf_type() {
 ciArrayKlass* ciArrayKlass::make(ciType* element_type, bool null_free, bool atomic, bool refined_type) {
   if (element_type->is_primitive_type()) {
     return ciTypeArrayKlass::make(element_type->basic_type());
+  } else if (refined_type) {
+    return ciObjArrayKlass::make(element_type->as_klass(), null_free, atomic);
   } else {
-    return ciObjArrayKlass::make(element_type->as_klass(), refined_type, null_free, atomic);
+    return ciMetaObjArrayKlass::make(element_type->as_klass());
   }
 }
 

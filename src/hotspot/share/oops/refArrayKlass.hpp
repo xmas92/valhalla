@@ -44,8 +44,8 @@ class RefArrayKlass : public ObjArrayKlass {
 
  private:
   // Constructor
-  RefArrayKlass(int n, Klass* element_klass, Symbol* name, ArrayKlass::ArrayProperties props);
-  static RefArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name,
+  RefArrayKlass(MetaObjArrayKlass* meta_klass, ArrayKlass::ArrayProperties props);
+  static RefArrayKlass* allocate_klass(MetaObjArrayKlass* meta_klass,
                                        ArrayKlass::ArrayProperties props, TRAPS);
 
  public:
@@ -57,12 +57,11 @@ class RefArrayKlass : public ObjArrayKlass {
   size_t oop_size(oop obj) const override;  // TODO FIXME make it virtual in objArrayKlass
 
   // Allocation
-  static RefArrayKlass* allocate_refArray_klass(ClassLoaderData* loader_data,
-                                                int n, Klass* element_klass,
+  static RefArrayKlass* allocate_refArray_klass(MetaObjArrayKlass* meta_klass,
                                                 ArrayKlass::ArrayProperties props, TRAPS);
 
  private:
-  objArrayOop allocate_instance(int length, ArrayProperties props, TRAPS) override;
+  objArrayOop allocate_instance(int length, TRAPS) override;
 
  public:
   // Copying TODO FIXME make copying method in objArrayKlass virtual and default implementation invalid (ShouldNotReachHere())

@@ -278,8 +278,8 @@ void AOTArtifactFinder::add_cached_type_array_class(TypeArrayKlass* tak) {
 void AOTArtifactFinder::add_cached_class(Klass* k) {
   if (k->is_typeArray_klass()) {
     add_cached_type_array_class(TypeArrayKlass::cast(k));
-  } else if (k->is_objArray_klass()) {
-    add_cached_class(ObjArrayKlass::cast(k)->element_klass());
+  } else if (k->is_metaObjArray_klass()) {
+    add_cached_class(MetaObjArrayKlass::cast(k)->element_klass());
   } else {
     add_cached_instance_class(InstanceKlass::cast(k));
   }

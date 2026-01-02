@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMetaObjArrayKlass.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciUtilities.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/signature.hpp"
-#include "utilities/debug.hpp"
 
 // ciObjArrayKlass
 //
@@ -40,16 +37,15 @@
 // whose Klass part is an ObjArrayKlass.
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::ciObjArrayKlass
+// ciMetaObjArrayKlass::ciMetaObjArrayKlass
 //
 // Constructor for loaded object array klasses.
-ciObjArrayKlass::ciObjArrayKlass(Klass* k) : ciArrayKlass(k) {
-  assert(get_Klass()->is_objArray_klass(), "wrong type");
-  Klass* element_Klass = get_ObjArrayKlass()->bottom_klass();
+ciMetaObjArrayKlass::ciMetaObjArrayKlass(Klass* k) : ciArrayKlass(k) {
+  assert(k->is_metaObjArray_klass(), "wrong type");
+  Klass* element_Klass = get_MetaObjArrayKlass()->bottom_klass();
   _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
   assert(_base_element_klass->is_instance_klass() ||
-         _base_element_klass->is_type_array_klass() ||
-         _base_element_klass->is_flat_array_klass(), "bad base klass");
+         _base_element_klass->is_type_array_klass(), "bad base klass");
   if (dimension() == 1) {
     _element_klass = _base_element_klass;
   } else {
@@ -61,19 +57,18 @@ ciObjArrayKlass::ciObjArrayKlass(Klass* k) : ciArrayKlass(k) {
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::ciObjArrayKlass
+// ciMetaObjArrayKlass::ciMetaObjArrayKlass
 //
 // Constructor for unloaded object array klasses.
-ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
-                                 ciKlass* base_element_klass,
-                                 int dimension)
+ciMetaObjArrayKlass::ciMetaObjArrayKlass(ciSymbol* array_name,
+                                         ciKlass* base_element_klass,
+                                         int dimension)
   : ciArrayKlass(array_name,
                  dimension, T_OBJECT) {
   _base_element_klass = base_element_klass;
   assert(_base_element_klass->is_instance_klass() ||
          _base_element_klass->is_type_array_klass() ||
-         _base_element_klass->is_flat_array_klass() ||
-         _base_element_klass->is_ref_array_klass(), "bad base klass");
+         _base_element_klass->is_flat_array_klass(), "bad base klass");
   if (dimension == 1) {
     _element_klass = base_element_klass;
   } else {
@@ -82,16 +77,16 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::element_klass
+// ciMetaObjArrayKlass::element_klass
 //
 // What is the one-level element type of this array?
-ciKlass* ciObjArrayKlass::element_klass() {
+ciKlass* ciMetaObjArrayKlass::element_klass() {
   if (_element_klass == nullptr) {
     assert(dimension() > 1, "_element_klass should not be null");
     // Produce the element klass.
     if (is_loaded()) {
       VM_ENTRY_MARK;
-      Klass* element_Klass = get_ObjArrayKlass()->element_klass();
+      Klass* element_Klass = get_MetaObjArrayKlass()->element_klass();
       _element_klass = CURRENT_THREAD_ENV->get_klass(element_Klass);
     } else {
       VM_ENTRY_MARK;
@@ -109,10 +104,10 @@ ciKlass* ciObjArrayKlass::element_klass() {
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::construct_array_name
+// ciMetaObjArrayKlass::construct_array_name
 //
 // Build an array name from an element name and a dimension.
-ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
+ciSymbol* ciMetaObjArrayKlass::construct_array_name(ciSymbol* element_name,
                                                 int dimension) {
   EXCEPTION_CONTEXT;
   int element_len = element_name->utf8_length();
@@ -137,10 +132,10 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::make_impl
+// ciMetaObjArrayKlass::make_impl
 //
 // Implementation of make.
-ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool null_free, bool atomic) {
+ciArrayKlass* ciMetaObjArrayKlass::make_impl(ciKlass* element_klass) {
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
@@ -150,22 +145,7 @@ ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool null_free,
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::unloaded_ciobjarrayklass();
     }
-
-    ArrayKlass::ArrayProperties props = ArrayKlass::ArrayProperties::DEFAULT;
-    if (null_free) {
-      assert(element_klass->is_inlinetype(), "Only value class arrays can be null free");
-      props = (ArrayKlass::ArrayProperties)(props | ArrayKlass::ArrayProperties::NULL_RESTRICTED);
-    }
-    if (!atomic) {
-      assert(element_klass->is_inlinetype(), "Only value class arrays can be non-atomic");
-      props = (ArrayKlass::ArrayProperties)(props | ArrayKlass::ArrayProperties::NON_ATOMIC);
-    }
-    array = MetaObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);
-    if (array->is_flatArray_klass()) {
-      return CURRENT_THREAD_ENV->get_flat_array_klass(array);
-    } else {
-      return CURRENT_THREAD_ENV->get_ref_array_klass(array);
-    }
+    return CURRENT_THREAD_ENV->get_meta_obj_array_klass(array);
   }
 
   // The array klass was unable to be made or the element klass was not loaded.
@@ -175,26 +155,26 @@ ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool null_free,
   }
   return
     CURRENT_ENV->get_unloaded_klass(element_klass, array_name)
-                        ->as_meta_obj_array_klass();
+                        ->as_obj_array_klass();
 }
 
 // ------------------------------------------------------------------
-// ciObjArrayKlass::make
+// ciMetaObjArrayKlass::make
 //
 // Make an array klass corresponding to the specified element klass.
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool null_free, bool atomic) {
-  GUARDED_VM_ENTRY(return make_impl(element_klass, null_free, atomic);)
+ciArrayKlass* ciMetaObjArrayKlass::make(ciKlass* element_klass) {
+  GUARDED_VM_ENTRY(return make_impl(element_klass);)
 }
 
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+ciArrayKlass* ciMetaObjArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
-    // Why was this not refined?
-    klass = ciObjArrayKlass::make(klass);
+    klass = ciMetaObjArrayKlass::make(klass);
   }
   return klass->as_array_klass();
 }
 
-ciKlass* ciObjArrayKlass::exact_klass() {
-  ShouldNotReachHere();
+ciKlass* ciMetaObjArrayKlass::exact_klass() {
+  // Not a refined type
+  return nullptr;
 }

@@ -956,7 +956,8 @@ const char* Klass::external_name() const {
       char* result = convert_hidden_name_to_java(name());
       return result;
     }
-  } else if (is_objArray_klass() && ObjArrayKlass::cast(this)->bottom_klass()->is_hidden()) {
+  } else if ((is_objArray_klass() && ObjArrayKlass::cast(this)->bottom_klass()->is_hidden()) ||
+             (is_metaObjArray_klass() && MetaObjArrayKlass::cast(this)->bottom_klass()->is_hidden())) {
     char* result = convert_hidden_name_to_java(name());
     return result;
   }
@@ -1148,6 +1149,7 @@ const char* Klass::joint_in_module_of_loader(const Klass* class2, bool include_p
 //   <fully-qualified-external-class-name> is in module <module-name>[@<version>]
 //                                         of loader <loader-name_and_id>[, parent loader <parent-loader-name_and_id>]
 const char* Klass::class_in_module_of_loader(bool use_are, bool include_parent_loader) const {
+  precond(!is_metaObjArray_klass());
   // 1. fully qualified external name of class
   const char* klass_name = external_name();
   size_t len = strlen(klass_name) + 1;

@@ -145,7 +145,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
   return (HeapWord*)untype(addr);
 }
 
-oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
+oop ZCollectedHeap::array_allocate(ArrayKlass* klass, size_t size, int length, bool do_zero, TRAPS) {
   const ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }

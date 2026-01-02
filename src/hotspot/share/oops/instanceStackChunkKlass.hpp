@@ -114,6 +114,8 @@ private:
 public:
   InstanceStackChunkKlass();
 
+  InstanceStackChunkKlass* java_klass() override { return this; }
+
   DEBUG_ONLY(bool is_stack_chunk_instance_klass_slow() const override { return true; })
 
   // Casting from Klass*

@@ -533,11 +533,13 @@ void ArchiveBuilder::gather_source_objs() {
 }
 
 bool ArchiveBuilder::is_excluded(Klass* klass) {
+  klass = klass->java_klass();
+
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     return SystemDictionaryShared::is_excluded_class(ik);
-  } else if (klass->is_objArray_klass()) {
-    Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
+  } else if (klass->is_metaObjArray_klass()) {
+    Klass* bottom = MetaObjArrayKlass::cast(klass)->bottom_klass();
     if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
@@ -859,7 +861,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     } else if (k->is_refArray_klass()) {
         num_obj_array_klasses ++;
         type = "ref array";
-    } else if (k->is_objArray_klass()) {
+    } else if (k->is_metaObjArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
       num_obj_array_klasses ++;

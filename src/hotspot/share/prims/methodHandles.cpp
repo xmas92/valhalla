@@ -1098,8 +1098,8 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
   if (VerifyMethodHandles && (lookup_mode & LM_TRUSTED) == LM_TRUSTED && caller_jh != nullptr &&
       java_lang_invoke_MemberName::clazz(mname()) != nullptr) {
     Klass* reference_klass = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
-    if (reference_klass != nullptr && reference_klass->is_objArray_klass()) {
-      reference_klass = ObjArrayKlass::cast(reference_klass)->bottom_klass();
+    if (reference_klass != nullptr && reference_klass->is_metaObjArray_klass()) {
+      reference_klass = MetaObjArrayKlass::cast(reference_klass)->bottom_klass();
     }
 
     // Reflection::verify_class_access can only handle instance classes.

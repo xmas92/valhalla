@@ -66,6 +66,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/objectBitSet.inline.hpp"
 
@@ -3369,8 +3370,8 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
       return iterate_over_flat_array(o);
   }
 
-  // object array
-  if (klass->is_objArray_klass()) {
+  // ref object array
+  if (klass->is_refArray_klass()) {
     return iterate_over_array(o);
   }
 
@@ -3379,7 +3380,7 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
     return iterate_over_type_array(o);
   }
 
-  return true;
+  ShouldNotReachHere();
 }
 
 void VM_HeapWalkOperation::doit() {

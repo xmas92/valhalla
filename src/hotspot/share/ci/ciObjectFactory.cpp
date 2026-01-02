@@ -29,6 +29,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciMetaObjArrayKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -181,9 +182,9 @@ void ciObjectFactory::init_shared_objects() {
   // Create dummy InstanceKlass and ObjArrayKlass object and assign them idents
   ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, nullptr);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
-  ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
+  ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciMetaObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
   init_ident_of(ciEnv::_unloaded_ciobjarrayklass);
-  assert(ciEnv::_unloaded_ciobjarrayklass->is_obj_array_klass(), "just checking");
+  assert(ciEnv::_unloaded_ciobjarrayklass->is_meta_obj_array_klass(), "just checking");
 
   get_metadata(Universe::boolArrayKlass());
   get_metadata(Universe::charArrayKlass());
@@ -412,14 +413,12 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
     } else if (k->is_instance_klass()) {
       assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
-    } else if (k->is_objArray_klass()) {
-      if (k->is_flatArray_klass()) {
-        return new (arena()) ciFlatArrayKlass(k);
-      } else if (k->is_refArray_klass()) {
-        return new (arena()) ciRefArrayKlass(k);
-      } else {
-        return new (arena()) ciObjArrayKlass(k);
-      }
+    } else if (k->is_flatArray_klass()) {
+      return new (arena()) ciFlatArrayKlass(k);
+    } else if (k->is_refArray_klass()) {
+      return new (arena()) ciRefArrayKlass(k);
+    } else if (k->is_metaObjArray_klass()) {
+      return new (arena()) ciMetaObjArrayKlass(k);
     } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(k);
     }
@@ -539,7 +538,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
       // The element klass is a TypeArrayKlass.
       element_klass = ciTypeArrayKlass::make(element_type);
     }
-    new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);
+    new_klass = new (arena()) ciMetaObjArrayKlass(name, element_klass, dimension);
   } else {
     jobject loader_handle = nullptr;
     if (accessing_klass != nullptr) {
