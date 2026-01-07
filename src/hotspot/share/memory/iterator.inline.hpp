@@ -38,6 +38,7 @@
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/klass.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/refArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
@@ -116,8 +117,18 @@ private:
     }
 
     template <typename KlassType>
+    static void unreachable(OopClosureType* cl, oop obj, Klass* k) {
+      ShouldNotReachHere();
+    }
+
+    template <typename KlassType>
     void set_init_function() {
       _function[KlassType::Kind] = &init<KlassType>;
+    }
+
+    template <typename KlassType>
+    void set_unreachable_function() {
+      _function[KlassType::Kind] = &unreachable<KlassType>;
     }
 
     template <typename KlassType>
@@ -148,6 +159,7 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
+      set_unreachable_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
@@ -184,8 +196,18 @@ private:
     }
 
     template <typename KlassType>
+    static void unreachable(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
+      ShouldNotReachHere();
+    }
+
+    template <typename KlassType>
     void set_init_function() {
       _function[KlassType::Kind] = &init<KlassType>;
+    }
+
+    template <typename KlassType>
+    void set_unreachable_function() {
+      _function[KlassType::Kind] = &unreachable<KlassType>;
     }
 
     template <typename KlassType>
@@ -213,6 +235,7 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
+      set_unreachable_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
@@ -249,8 +272,18 @@ private:
     }
 
     template <typename KlassType>
+    static void unreachable(OopClosureType* cl, oop obj, Klass* k) {
+      ShouldNotReachHere();
+    }
+
+    template <typename KlassType>
     void set_init_function() {
       _function[KlassType::Kind] = &init<KlassType>;
+    }
+
+    template <typename KlassType>
+    void set_unreachable_function() {
+      _function[KlassType::Kind] = &unreachable<KlassType>;
     }
 
     template <typename KlassType>
@@ -278,6 +311,7 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
+      set_unreachable_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
