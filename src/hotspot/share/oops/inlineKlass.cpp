@@ -263,12 +263,11 @@ oop InlineKlass::read_payload_from_addr(const oop src, size_t offset, LayoutKind
   }
 }
 
-void InlineKlass::write_value_to_addr(oop src, void* dst, LayoutKind lk, bool dest_is_initialized, TRAPS) {
+void InlineKlass::write_value_to_addr(oop src, void* dst, LayoutKind lk, bool dest_is_initialized) {
   void* src_addr = nullptr;
   if (src == nullptr) {
-    if (!LayoutKindHelper::is_nullable_flat(lk)) {
-      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Value is null");
-    }
+    assert(LayoutKindHelper::is_nullable_flat(lk), "must allow null values");
+
     // Writing null to a nullable flat field/element is usually done by writing
     // the whole pre-allocated null_reset_value at the payload address to ensure
     // that the null marker and all potential oops are reset to "zeros".
@@ -288,6 +287,14 @@ void InlineKlass::write_value_to_addr(oop src, void* dst, LayoutKind lk, bool de
     }
   }
   copy_payload_to_addr(src_addr, dst, lk, dest_is_initialized);
+}
+
+void InlineKlass::write_value_to_addr(oop src, void* dst, LayoutKind lk, bool dest_is_initialized, TRAPS) {
+  if (src == nullptr && !LayoutKindHelper::is_nullable_flat(lk)) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Value is null");
+  }
+
+  write_value_to_addr(src, dst, lk, dest_is_initialized);
 }
 
 // Arrays of...

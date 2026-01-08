@@ -353,17 +353,25 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, oopDe
   // Scavenge and allocate an instance.
   oop result;
   Handle h_init_val(current, init_val); // keep the init_val object alive
+  Handle holder(current, array_type->klass_holder()); // keep the array klass alive
 
   if (array_type->is_flatArray_klass()) {
-    Handle holder(current, array_type->klass_holder()); // keep the array klass alive
     FlatArrayKlass* fak = FlatArrayKlass::cast(array_type);
     InlineKlass* vk = fak->element_klass();
     ArrayKlass::ArrayProperties props = ArrayKlass::array_properties_from_layout(fak->layout_kind());
+
     result = oopFactory::new_flatArray(vk, len, props, fak->layout_kind(), THREAD);
-    if (array_type->is_null_free_array_klass() && !h_init_val.is_null()) {
+    if (result != nullptr && array_type->is_null_free_array_klass()) {
       // Null-free arrays need to be initialized
-      for (int i = 0; i < len; i++) {
-        vk->write_value_to_addr(h_init_val(), ((flatArrayOop)result)->value_at_addr(i, fak->layout_helper()), fak->layout_kind(), true, CHECK);
+
+      // A null inital value is used as a signal value that the value is
+      // represented by all zeros. A newly allocated null-free array is already
+      // initialised with all zeros and has no null markers. So the payload copy
+      // can be elided.
+      if (!h_init_val.is_null()) {
+        for (int i = 0; i < len; i++) {
+          vk->write_value_to_addr(h_init_val(), ((flatArrayOop)result)->value_at_addr(i, fak->layout_helper()), fak->layout_kind(), true);
+        }
       }
     }
   } else if (array_type->is_typeArray_klass()) {
@@ -372,9 +380,13 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, oopDe
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     result = oopFactory::new_typeArray(elem_type, len, THREAD);
   } else {
-    Handle holder(current, array_type->klass_holder()); // keep the array klass alive
+    // Check nullability before allocating
+    if (array_type->is_null_free_array_klass() && h_init_val.is_null()) {
+      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Init value is null");
+    }
+
     result = oopFactory::new_refArray(array_type, len, THREAD);
-    if (array_type->is_null_free_array_klass() && !h_init_val.is_null()) {
+    if (result != nullptr && array_type->is_null_free_array_klass()) {
       // Null-free arrays need to be initialized
       for (int i = 0; i < len; i++) {
         ((objArrayOop)result)->obj_at_put(i, h_init_val());
