@@ -113,18 +113,4 @@ void RefArrayKlass::oop_oop_iterate_range(refArrayOop a,
   oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
 }
 
-// Placed here to resolve include cycle between objArrayKlass.inline.hpp and
-// objArrayOop.inline.hpp
-template <typename OopClosureType>
-void refArrayOopDesc::oop_iterate_range(OopClosureType *blk, int start,
-                                        int end) {
-  if (UseCompressedOops) {
-    ((RefArrayKlass *)klass())
-        ->oop_oop_iterate_range<narrowOop>(this, blk, start, end);
-  } else {
-    ((RefArrayKlass *)klass())
-        ->oop_oop_iterate_range<oop>(this, blk, start, end);
-  }
-}
-
 #endif // SHARE_OOPS_REFARRAYKLASS_INLINE_HPP

@@ -128,15 +128,18 @@ void ParCompactionManager::push_objArray(oop obj) {
   size_t array_length = obj_array->length();
   size_t initial_chunk_size =
     _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
-  follow_array(obj_array, 0, initial_chunk_size);
+  int end = checked_cast<int>(initial_chunk_size);
+  obj_array->oop_iterate_range(&_mark_and_push_closure, 0, end);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
   // Access before release by claim().
-  oop obj = state->source();
+  objArrayOop obj_array = objArrayOop(state->source());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_marking_stack, stolen);
-  follow_array(objArrayOop(obj), claim._start, claim._end);
+  obj_array->oop_iterate_range(&_mark_and_push_closure,
+                              checked_cast<int>(claim._start),
+                              checked_cast<int>(claim._end));
 }
 
 void ParCompactionManager::follow_marking_stacks() {

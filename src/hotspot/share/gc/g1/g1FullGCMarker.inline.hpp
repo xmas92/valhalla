@@ -81,7 +81,7 @@ inline bool G1FullGCMarker::is_empty() {
   return _oop_stack.is_empty() && _objarray_stack.is_empty();
 }
 
-inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
+inline void G1FullGCMarker::push_objarray(objArrayOop obj, size_t index) {
   ObjArrayTask task(obj, index);
   assert(task.is_valid(), "bad ObjArrayTask");
   _objarray_stack.push(task);
@@ -107,13 +107,12 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   if (end_index < len) {
     push_objarray(array, end_index);
   }
-  assert(array->is_refArray(), "Must be");
-  refArrayOop(array)->oop_iterate_range(mark_closure(), beg_index, end_index);
+  array->oop_iterate_range(mark_closure(), beg_index, end_index);
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
   assert(_bitmap->is_marked(obj), "should be marked");
-  if (obj->is_refArray()) {
+  if (obj->is_objArray()) {
     // Handle object arrays explicitly to allow them to
     // be split into chunks if needed.
     follow_array((objArrayOop)obj);

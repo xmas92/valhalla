@@ -99,27 +99,6 @@ inline void ParCompactionManager::FollowStackClosure::do_void() {
   }
 }
 
-template <typename T>
-inline void follow_array_specialized(objArrayOop obj, size_t start, size_t end, ParCompactionManager* cm) {
-  assert(start <= end, "invariant");
-  T* const base = (T*)obj->base();
-  T* const beg = base + start;
-  T* const chunk_end = base + end;
-
-  // Push the non-null elements of the next stride on the marking stack.
-  for (T* e = beg; e < chunk_end; e++) {
-    cm->mark_and_push<T>(e);
-  }
-}
-
-inline void ParCompactionManager::follow_array(objArrayOop obj, size_t start, size_t end) {
-  if (UseCompressedOops) {
-    follow_array_specialized<narrowOop>(obj, start, end, this);
-  } else {
-    follow_array_specialized<oop>(obj, start, end, this);
-  }
-}
-
 inline void ParCompactionManager::follow_contents(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
     assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->source()), "should be marked");
@@ -127,7 +106,7 @@ inline void ParCompactionManager::follow_contents(const ScannerTask& task, bool 
   } else {
     oop obj = task.to_oop();
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-    if (obj->is_refArray()) {
+    if (obj->is_objArray()) {
       push_objArray(obj);
     } else {
       obj->oop_iterate(&_mark_and_push_closure);

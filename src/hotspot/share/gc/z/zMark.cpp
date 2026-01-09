@@ -170,6 +170,10 @@ bool ZMark::follow_work_partial() {
 }
 
 bool ZMark::is_array(zaddress addr) const {
+  // ZGC's ZMarkStackEntry for partial arrays have erased the information about
+  // the klass. It assumes that it is an array of oops. But this is only true
+  // for RefArrayKlass, so FlatArrayKlass objects are treated as normal objects.
+  // In JEP-401 ZGC will not encounter any such FlatArrayKlass.
   return to_oop(addr)->is_refArray();
 }
 

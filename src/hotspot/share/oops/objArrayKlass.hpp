@@ -146,10 +146,6 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
-  // Iterate over oop elements within [start, end), and metadata.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
-
  public:
   // Iterate over all oop elements.
   template <typename T, class OopClosureType>
