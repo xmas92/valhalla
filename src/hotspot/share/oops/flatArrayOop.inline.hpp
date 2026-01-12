@@ -50,11 +50,6 @@ inline int flatArrayOopDesc::object_size(int lh) const {
   return object_size(lh, length());
 }
 
-inline oop flatArrayOopDesc::obj_at(int index) const {
-  EXCEPTION_MARK;
-  return obj_at(index, THREAD);
-}
-
 inline oop flatArrayOopDesc::obj_at(int index, TRAPS) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   FlatArrayKlass* faklass = FlatArrayKlass::cast(klass());

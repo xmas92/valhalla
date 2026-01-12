@@ -66,7 +66,6 @@ class refArrayOopDesc : public arrayOopDesc {
 
   // Accessing
   oop obj_at(int index) const;
-  oop obj_at(int index, TRAPS) const;
 
   void obj_at_put(int index, oop value);
   void obj_at_put(int index, oop value, TRAPS);
