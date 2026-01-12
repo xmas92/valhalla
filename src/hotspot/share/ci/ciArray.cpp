@@ -27,11 +27,13 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "compiler/compilerThread.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/layoutKind.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // ciArray
@@ -62,9 +64,17 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
   case T_ARRAY:
   case T_OBJECT:
     {
+      CompilerThread* THREAD = CompilerThread::current();
       assert(ary->is_objArray(), "");
       objArrayOop objary = (objArrayOop) ary;
-      oop elem = objary->obj_at(index);
+      oop elem = objary->obj_at(index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // Reading a flat array oop may have caused an OOME.
+        assert(PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass()),
+               "we expect only an OOM error here");
+        CLEAR_PENDING_EXCEPTION;
+        return ciConstant();
+      }
       return ciConstant(elembt, CURRENT_ENV->get_object(elem));
     }
   default:
