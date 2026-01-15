@@ -74,9 +74,9 @@ class Klass : public Metadata {
      InstanceClassLoaderKlassKind,
      InstanceStackChunkKlassKind,
      TypeArrayKlassKind,
-     ObjArrayKlassKind,
      RefArrayKlassKind,
      FlatArrayKlassKind,
+     ObjArrayKlassKind,
      UnknownKlassKind
    };
 

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OBJARRAYKLASS_HPP
 
 #include "oops/arrayKlass.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -65,6 +66,8 @@ class ObjArrayKlass : public ArrayKlass {
   // For dummy objects
   ObjArrayKlass() {}
 
+  size_t oop_size(oop obj) const override { ShouldNotReachHere(); }
+
   virtual Klass* element_klass() const      { return _element_klass; }
   virtual void set_element_klass(Klass* k)  { _element_klass = k; }
 
@@ -91,7 +94,6 @@ class ObjArrayKlass : public ArrayKlass {
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
   DEBUG_ONLY(bool is_objArray_klass_slow() const override { return true; })
-  size_t oop_size(oop obj) const override;
 
   // Allocation
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
@@ -130,36 +132,6 @@ class ObjArrayKlass : public ArrayKlass {
   // Initialization (virtual from Klass)
   void initialize(TRAPS) override;
 
-  // Oop fields (and metadata) iterators
-  //
-  // The ObjArrayKlass iterators also visits the Object's klass.
-
-  // Iterate over oop elements and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
-
-  // Iterate over oop elements and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-
-  // Iterate over oop elements within mr, and metadata.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Iterate over oop elements within [start, end), and metadata.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
-
- public:
-  // Iterate over all oop elements.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
-
- private:
-  // Iterate over all oop elements with indices within mr.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
-
  public:
   u2 compute_modifier_flags() const override;
 
@@ -168,17 +140,10 @@ class ObjArrayKlass : public ArrayKlass {
   void print_on(outputStream* st) const override;
   void print_value_on(outputStream* st) const override;
 
-  void oop_print_value_on(oop obj, outputStream* st) override;
-#ifndef PRODUCT
-  void oop_print_on      (oop obj, outputStream* st) override;
-#endif //PRODUCT
-
   const char* internal_name() const override;
 
   // Verification
   void verify_on(outputStream* st) override;
-
-  void oop_verify_on(oop obj, outputStream* st) override;
 };
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_HPP
