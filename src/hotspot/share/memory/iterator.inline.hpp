@@ -38,7 +38,6 @@
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/klass.hpp"
-#include "oops/objArrayKlass.inline.hpp"
 #include "oops/refArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
@@ -149,7 +148,6 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
@@ -215,7 +213,6 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
@@ -281,7 +278,6 @@ private:
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
       set_init_function<FlatArrayKlass>();
       set_init_function<RefArrayKlass>();
