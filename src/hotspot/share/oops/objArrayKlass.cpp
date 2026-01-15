@@ -166,15 +166,6 @@ ArrayKlass(name, kind, props, mk) {
   assert(is_objArray_klass(), "sanity");
 }
 
-size_t ObjArrayKlass::oop_size(oop obj) const {
-  // In this assert, we cannot safely access the Klass* with compact headers,
-  // because size_given_klass() calls oop_size() on objects that might be
-  // concurrently forwarded, which would overwrite the Klass*.
-  assert(UseCompactObjectHeaders || obj->is_objArray(), "must be object array");
-  // return objArrayOop(obj)->object_size();
-  return obj->is_flatArray() ? flatArrayOop(obj)->object_size(layout_helper()) : refArrayOop(obj)->object_size();
-}
-
 ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProperties properties) {
   // TODO FIXME: the layout selection should take the array size in consideration
   // to avoid creation of arrays too big to be handled by the VM. See JDK-8233189
@@ -456,18 +447,6 @@ void ObjArrayKlass::print_value_on(outputStream* st) const {
   st->print("[]");
 }
 
-#ifndef PRODUCT
-
-void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
-  ShouldNotReachHere();
-}
-
-#endif //PRODUCT
-
-void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
-  ShouldNotReachHere();
-}
-
 const char* ObjArrayKlass::internal_name() const {
   return external_name();
 }
@@ -482,14 +461,4 @@ void ObjArrayKlass::verify_on(outputStream* st) {
   Klass* bk = bottom_klass();
   guarantee(bk->is_instance_klass() || bk->is_typeArray_klass() || bk->is_flatArray_klass(),
             "invalid bottom klass");
-}
-
-void ObjArrayKlass::oop_verify_on(oop obj, outputStream* st) {
-  ArrayKlass::oop_verify_on(obj, st);
-  guarantee(obj->is_objArray(), "must be objArray");
-  guarantee(obj->is_null_free_array() || (!is_null_free_array_klass()), "null-free klass but not object");
-  objArrayOop oa = objArrayOop(obj);
-  for(int index = 0; index < oa->length(); index++) {
-    guarantee(oopDesc::is_oop_or_null(oa->obj_at(index)), "should be oop");
-  }
 }
