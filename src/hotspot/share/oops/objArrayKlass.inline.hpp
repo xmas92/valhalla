@@ -46,31 +46,4 @@ inline void ObjArrayKlass::release_set_next_refined_klass(ObjArrayKlass* k) {
   AtomicAccess::release_store(&_next_refined_array_klass, k);
 }
 
-template <typename T, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
-  ShouldNotReachHere();
-}
-
-template <typename T, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements_bounded(
-    objArrayOop a, OopClosureType* closure, void* low, void* high) {
-  ShouldNotReachHere();
-
-}
-
-template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  ShouldNotReachHere();
-}
-
-template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  ShouldNotReachHere();
-}
-
-template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  ShouldNotReachHere();
-}
-
 #endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
