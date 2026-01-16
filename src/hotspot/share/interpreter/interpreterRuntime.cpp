@@ -47,6 +47,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -55,6 +56,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -232,22 +234,18 @@ JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::read_flat_field(JavaThread* current, oopDesc* obj, ResolvedFieldEntry* entry))
   assert(oopDesc::is_oop(obj), "Sanity check");
-  Handle obj_h(THREAD, obj);
-
+#ifdef ASSERT
   InstanceKlass* holder = InstanceKlass::cast(entry->field_holder());
   assert(entry->field_holder()->field_is_flat(entry->field_index()), "Sanity check");
-
-  InlineLayoutInfo* layout_info = holder->inline_layout_info_adr(entry->field_index());
-  InlineKlass* field_vklass = layout_info->klass();
-
-#ifdef ASSERT
   fieldDescriptor fd;
   bool found = holder->find_field_from_offset(entry->field_offset(), false, &fd);
   assert(found, "Field not found");
   assert(fd.is_flat(), "Field must be flat");
 #endif // ASSERT
 
-  oop res = field_vklass->read_payload_from_addr(obj_h(), entry->field_offset(), layout_info->kind(), CHECK);
+  // Why do we put obj in a handle
+  InlineKlassPayloadHandle payload(instanceOop(obj), entry);
+  oop res = payload.read(CHECK);
   current->set_vm_result_oop(res);
 JRT_END
 
@@ -257,10 +255,8 @@ JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDes
   assert(value == nullptr || oopDesc::is_oop(value), "Sanity check");
   Handle val_h(THREAD, value);
 
-  InstanceKlass* holder = entry->field_holder();
-  InlineLayoutInfo* li = holder->inline_layout_info_adr(entry->field_index());
-  InlineKlass* vk = li->klass();
-  vk->write_value_to_addr(val_h(), ((char*)(oopDesc*)obj_h()) + entry->field_offset(), li->kind(), CHECK);
+  InlineKlassPayload payload(instanceOop(obj), entry);
+  payload.write(instanceOop(value), CHECK);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
