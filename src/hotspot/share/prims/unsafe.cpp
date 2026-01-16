@@ -448,8 +448,9 @@ UNSAFE_ENTRY(jobject, Unsafe_GetFlatValue(JNIEnv *env, jobject unsafe, jobject o
   InlineKlass* vk = InlineKlass::cast(k);
   assert_and_log_unsafe_value_access(base, offset, vk);
   LayoutKind lk = (LayoutKind)layoutKind;
-  Handle base_h(THREAD, base);
-  oop v = vk->read_payload_from_addr(base_h(), offset, lk, CHECK_NULL);
+  // Why do we need base in a handle?
+  InlineKlassPayloadHandle payload(base, vk, (size_t)offset, lk);
+  oop v = payload.read(CHECK_NULL);
   return JNIHandles::make_local(THREAD, v);
 } UNSAFE_END
 
@@ -459,24 +460,18 @@ UNSAFE_ENTRY(void, Unsafe_PutFlatValue(JNIEnv *env, jobject unsafe, jobject obj,
   if (base == nullptr) {
     THROW(vmSymbols::java_lang_NullPointerException());
   }
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc));
-  InlineKlass* vk = InlineKlass::cast(k);
-  assert(!base->is_inline_type() || base->mark().is_larval_state(), "must be an object instance or a larval inline type");
+
+  InlineKlass* vk = InlineKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc)));
   assert_and_log_unsafe_value_access(base, offset, vk);
-  LayoutKind lk = (LayoutKind)layoutKind;
-  oop v = JNIHandles::resolve(value);
-  vk->write_value_to_addr(v, ((char*)(oopDesc*)base) + offset, lk, CHECK);
+  InlineKlassPayload payload(base, vk, static_cast<size_t>(offset), static_cast<LayoutKind>(layoutKind));
+  payload.write(instanceOop(JNIHandles::resolve(value)), CHECK);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_MakePrivateBuffer(JNIEnv *env, jobject unsafe, jobject value)) {
   oop v = JNIHandles::resolve_non_null(value);
   assert(v->is_inline_type(), "must be an inline type instance");
-  Handle vh(THREAD, v);
-  InlineKlass* vk = InlineKlass::cast(v->klass());
-  instanceOop new_value = vk->allocate_instance(CHECK_NULL);
-  vk->copy_payload_to_addr(vk->payload_addr(vh()), vk->payload_addr(new_value), LayoutKind::BUFFERED, false);
-  markWord mark = new_value->mark();
-  new_value->set_mark(mark.enter_larval_state());
+  InlineKlassPayload payload((instanceOop(v)));
+  instanceOop new_value = payload.make_private_buffer(CHECK_NULL);
   return JNIHandles::make_local(THREAD, new_value);
 } UNSAFE_END
 
