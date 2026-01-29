@@ -68,11 +68,11 @@ inline InlineKlassPayloadImpl<OopOrHandle>::InlineKlassPayloadImpl(instanceOop o
   : InlineKlassPayloadImpl(oop, inline_layout_info->klass(), offset, inline_layout_info->kind()) {}
 
 template <typename OopOrHandle>
-inline InlineKlassPayloadImpl<OopOrHandle>::InlineKlassPayloadImpl(instanceOop oop)
+inline InlineKlassPayloadImpl<OopOrHandle>::InlineKlassPayloadImpl(inlineOop oop)
   : InlineKlassPayloadImpl(oop, InlineKlass::cast(oop->klass())) {}
 
 template <typename OopOrHandle>
-inline InlineKlassPayloadImpl<OopOrHandle>::InlineKlassPayloadImpl(instanceOop oop, InlineKlass* klass)
+inline InlineKlassPayloadImpl<OopOrHandle>::InlineKlassPayloadImpl(inlineOop oop, InlineKlass* klass)
   : InlineKlassPayloadImpl(oop, klass, klass->payload_offset(), LayoutKind::BUFFERED) {
   postcond(oop->klass() == klass);
 }
@@ -183,20 +183,20 @@ inline void InlineKlassPayloadImpl<OopOrHandle>::set_index(int index, jint layou
 }
 
 template <>
-inline instanceOop InlineKlassPayloadImpl<oop>::allocate_instance(TRAPS) const {
+inline inlineOop InlineKlassPayloadImpl<oop>::allocate_instance(TRAPS) const {
   Handle holder(THREAD, _holder);
-  instanceOop res = _klass->allocate_instance(THREAD);
+  inlineOop res = _klass->allocate_instance(THREAD);
   _holder = holder();
   return res;
 }
 
 template <>
-inline instanceOop InlineKlassPayloadImpl<Handle>::allocate_instance(TRAPS) const {
+inline inlineOop InlineKlassPayloadImpl<Handle>::allocate_instance(TRAPS) const {
   return get_klass()->allocate_instance(THREAD);
 }
 
 template <typename OopOrHandle>
-inline instanceOop InlineKlassPayloadImpl<OopOrHandle>::make_private_buffer(TRAPS) {
+inline inlineOop InlineKlassPayloadImpl<OopOrHandle>::make_private_buffer(TRAPS) {
   // TODO: I do not see a reason to restrict the creation of a private buffer
   //       to already buffered objects other than the simplification that the
   //       other buffer is immutable and does not have racy null reads.
@@ -205,7 +205,7 @@ inline instanceOop InlineKlassPayloadImpl<OopOrHandle>::make_private_buffer(TRAP
          "Only clone immutable buffers");
 
   // Clone the object
-  instanceOop private_buffer = allocate_instance(CHECK_NULL);
+  inlineOop private_buffer = allocate_instance(CHECK_NULL);
   InlineKlassPayload dst(private_buffer, get_klass());
   copy_to_uninitialized(dst);
 
@@ -217,7 +217,7 @@ inline instanceOop InlineKlassPayloadImpl<OopOrHandle>::make_private_buffer(TRAP
 }
 
 template <typename OopOrHandle>
-inline instanceOop InlineKlassPayloadImpl<OopOrHandle>::read(TRAPS) {
+inline inlineOop InlineKlassPayloadImpl<OopOrHandle>::read(TRAPS) {
   assert(get_layout_kind() != LayoutKind::BUFFERED,
          "Use make_private_buffer to clone a mutable copy buffer");
 
@@ -230,7 +230,7 @@ inline instanceOop InlineKlassPayloadImpl<OopOrHandle>::read(TRAPS) {
     } // Fallthrough
     case LayoutKind::NULL_FREE_ATOMIC_FLAT:
     case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-      instanceOop res = allocate_instance(CHECK_NULL);
+      inlineOop res = allocate_instance(CHECK_NULL);
       InlineKlassPayload dst(res, get_klass());
       copy_to_uninitialized(dst);
       if (has_null_marker() && dst.is_marked_as_null()) {
@@ -311,7 +311,7 @@ inline void InlineKlassPayloadImpl<OopOrHandle>::copy_to_uninitialized(const Inl
 }
 
 template <typename OopOrHandle>
-inline void InlineKlassPayloadImpl<OopOrHandle>::write(instanceOop obj) {
+inline void InlineKlassPayloadImpl<OopOrHandle>::write(inlineOop obj) {
   assert(get_layout_kind() != LayoutKind::BUFFERED, "Why are you cloning something immutable");
 
   if (obj == nullptr) {
@@ -352,7 +352,7 @@ inline void InlineKlassPayloadImpl<OopOrHandle>::write(instanceOop obj) {
 }
 
 template <typename OopOrHandle>
-inline void InlineKlassPayloadImpl<OopOrHandle>::write(instanceOop obj, TRAPS) {
+inline void InlineKlassPayloadImpl<OopOrHandle>::write(inlineOop obj, TRAPS) {
   assert(get_layout_kind() != LayoutKind::BUFFERED, "Why are you cloning something immutable");
 
   if (obj == nullptr && !has_null_marker()) {
