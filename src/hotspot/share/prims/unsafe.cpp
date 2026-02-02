@@ -41,6 +41,7 @@
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
 #include "oops/inlineKlass.inline.hpp"
+#include "oops/inlineKlassPayload.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -448,8 +449,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetFlatValue(JNIEnv *env, jobject unsafe, jobject o
   InlineKlass* vk = InlineKlass::cast(k);
   assert_and_log_unsafe_value_access(base, offset, vk);
   LayoutKind lk = (LayoutKind)layoutKind;
-  // Why do we need base in a handle?
-  InlineKlassPayloadHandle payload(base, vk, (size_t)offset, lk);
+  FlatInlineKlassPayload payload = FlatInlineKlassPayload::construct_from_parts(base, vk, (size_t)offset, lk);
   oop v = payload.read(CHECK_NULL);
   return JNIHandles::make_local(THREAD, v);
 } UNSAFE_END
@@ -463,14 +463,15 @@ UNSAFE_ENTRY(void, Unsafe_PutFlatValue(JNIEnv *env, jobject unsafe, jobject obj,
 
   InlineKlass* vk = InlineKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc)));
   assert_and_log_unsafe_value_access(base, offset, vk);
-  InlineKlassPayload payload(base, vk, static_cast<size_t>(offset), static_cast<LayoutKind>(layoutKind));
+  LayoutKind lk = (LayoutKind)layoutKind;
+  FlatInlineKlassPayload payload = FlatInlineKlassPayload::construct_from_parts(base, vk, (size_t)offset, lk);
   payload.write(inlineOop(JNIHandles::resolve(value)), CHECK);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_MakePrivateBuffer(JNIEnv *env, jobject unsafe, jobject value)) {
   oop v = JNIHandles::resolve_non_null(value);
   assert(v->is_inline_type(), "must be an inline type instance");
-  InlineKlassPayload payload((inlineOop(v)));
+  BufferedInlineKlassPayload payload((inlineOop(v)));
   instanceOop new_value = payload.make_private_buffer(CHECK_NULL);
   return JNIHandles::make_local(THREAD, new_value);
 } UNSAFE_END
