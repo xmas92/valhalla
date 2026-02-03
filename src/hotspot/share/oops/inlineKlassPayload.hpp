@@ -135,7 +135,7 @@ public:
 class FlatArrayInlineKlassPayload;
 class FlatFieldInlineKlassPayload;
 
-class FlatInlineKlassPayload : public ValuePayload {
+class FlatValuePayload : public ValuePayload {
 protected:
   using ValuePayload::ValuePayload;
 
@@ -145,9 +145,9 @@ private:
   inline void copy_from_helper(ValuePayload& src);
 
 public:
-  FlatInlineKlassPayload() = default;
-  FlatInlineKlassPayload(const FlatInlineKlassPayload&) = default;
-  FlatInlineKlassPayload& operator=(const FlatInlineKlassPayload&) = default;
+  FlatValuePayload() = default;
+  FlatValuePayload(const FlatValuePayload&) = default;
+  FlatValuePayload& operator=(const FlatValuePayload&) = default;
 
   [[nodiscard]] inline bool copy_to(BufferedValuePayload& dst);
   [[nodiscard]] inline bool copy_to_uninitialized(BufferedValuePayload& dst);
@@ -163,7 +163,7 @@ public:
   inline void write_without_nullability_check(inlineOop obj);
   inline void write(inlineOop obj, TRAPS);
 
-  [[nodiscard]] static inline FlatInlineKlassPayload
+  [[nodiscard]] static inline FlatValuePayload
   construct_from_parts(oop holder, InlineKlass* klass, ptrdiff_t offset,
                        LayoutKind layout_kind);
 
@@ -174,9 +174,9 @@ public:
   inline OopHandle get_oop_handle(OopStorage* storage) const;
 };
 
-class FlatFieldInlineKlassPayload : public FlatInlineKlassPayload {
+class FlatFieldInlineKlassPayload : public FlatValuePayload {
 protected:
-  using FlatInlineKlassPayload::FlatInlineKlassPayload;
+  using FlatValuePayload::FlatValuePayload;
 
   inline FlatFieldInlineKlassPayload(instanceOop holder, ptrdiff_t offset,
                                      InlineLayoutInfo* inline_layout_info);
@@ -209,7 +209,7 @@ public:
   inline OopHandle get_oop_handle(OopStorage* storage) const;
 };
 
-class FlatArrayInlineKlassPayload : public FlatInlineKlassPayload {
+class FlatArrayInlineKlassPayload : public FlatValuePayload {
 private:
   struct Storage {
     jint _layout_helper;
@@ -217,7 +217,7 @@ private:
   } _storage;
 
 protected:
-  using FlatInlineKlassPayload::FlatInlineKlassPayload;
+  using FlatValuePayload::FlatValuePayload;
 
   inline FlatArrayInlineKlassPayload(flatArrayOop holder, InlineKlass* klass,
                                      ptrdiff_t offset, LayoutKind layout_kind,
@@ -324,24 +324,23 @@ public:
   inline inlineOop get_holder() const;
 };
 
-class FlatInlineKlassPayload::Handle : public ValuePayload::Handle {
+class FlatValuePayload::Handle : public ValuePayload::Handle {
 public:
   using ValuePayload::Handle::Handle;
 
-  inline FlatInlineKlassPayload operator()() const;
+  inline FlatValuePayload operator()() const;
 };
 
-class FlatInlineKlassPayload::OopHandle : public ValuePayload::OopHandle {
+class FlatValuePayload::OopHandle : public ValuePayload::OopHandle {
 public:
   using ValuePayload::OopHandle::OopHandle;
 
-  inline FlatInlineKlassPayload operator()() const;
+  inline FlatValuePayload operator()() const;
 };
 
-class FlatFieldInlineKlassPayload::Handle
-    : public FlatInlineKlassPayload::Handle {
+class FlatFieldInlineKlassPayload::Handle : public FlatValuePayload::Handle {
 public:
-  using FlatInlineKlassPayload::Handle::Handle;
+  using FlatValuePayload::Handle::Handle;
 
   inline FlatFieldInlineKlassPayload operator()() const;
 
@@ -349,17 +348,16 @@ public:
 };
 
 class FlatFieldInlineKlassPayload::OopHandle
-    : public FlatInlineKlassPayload::OopHandle {
+    : public FlatValuePayload::OopHandle {
 public:
-  using FlatInlineKlassPayload::OopHandle::OopHandle;
+  using FlatValuePayload::OopHandle::OopHandle;
 
   inline FlatFieldInlineKlassPayload operator()() const;
 
   inline instanceOop get_holder() const;
 };
 
-class FlatArrayInlineKlassPayload::Handle
-    : public FlatInlineKlassPayload::Handle {
+class FlatArrayInlineKlassPayload::Handle : public FlatValuePayload::Handle {
 private:
   FlatArrayInlineKlassPayload::Storage _storage;
 
@@ -372,7 +370,7 @@ public:
 };
 
 class FlatArrayInlineKlassPayload::OopHandle
-    : public FlatInlineKlassPayload::OopHandle {
+    : public FlatValuePayload::OopHandle {
 private:
   FlatArrayInlineKlassPayload::Storage _storage;
 
