@@ -258,20 +258,14 @@ ValuePayload::get_oop_handle(OopStorage* storage) const {
 
 template <typename PayloadA, typename PayloadB>
 inline void ValuePayload::copy(const PayloadA& src, const PayloadB& dst,
-                               LayoutKind copy_layout_kind,
-                               bool dest_is_initialized) {
+                               LayoutKind copy_layout_kind) {
   assert_pre_copy_invariants(src, dst, copy_layout_kind);
 
   InlineKlass* const klass = src.get_klass();
 
   const auto value_copy = [&](const auto& src) {
-    if (dest_is_initialized) {
-      HeapAccess<>::value_copy(src.get_address(), dst.get_address(), klass,
-                               copy_layout_kind);
-    } else {
-      HeapAccess<IS_DEST_UNINITIALIZED>::value_copy(
-          src.get_address(), dst.get_address(), klass, copy_layout_kind);
-    }
+    HeapAccess<>::value_copy(src.get_address(), dst.get_address(), klass,
+                             copy_layout_kind);
   };
 
   switch (copy_layout_kind) {
@@ -307,7 +301,7 @@ inline inlineOop BufferedValuePayload::make_private_buffer(TRAPS) {
   // Clone the object
   inlineOop private_buffer = allocate_instance(CHECK_NULL);
   BufferedValuePayload dst(private_buffer, get_klass());
-  copy_to_uninitialized(dst);
+  copy_to(dst);
 
   // Mark copy as mutable
   const markWord mark = private_buffer->mark();
@@ -317,12 +311,7 @@ inline inlineOop BufferedValuePayload::make_private_buffer(TRAPS) {
 }
 
 inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
-  copy(*this, dst, LayoutKind::BUFFERED, true /* dest_is_initialized */);
-}
-
-inline void
-BufferedValuePayload::copy_to_uninitialized(const BufferedValuePayload& dst) {
-  copy(*this, dst, LayoutKind::BUFFERED, false /* dest_is_initialized */);
+  copy(*this, dst, LayoutKind::BUFFERED);
 }
 
 inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer)
@@ -374,12 +363,12 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop holder, ptrdiff_t offset,
 inline instanceOop FlatFieldPayload::get_holder() const {
   return instanceOop(ValuePayload::get_holder());
 }
-inline bool FlatValuePayload::copy_to(ValuePayload& dst,
-                                      bool dest_is_initialized) {
+
+inline bool FlatValuePayload::copy_to(BufferedValuePayload& dst) {
   // Copy from FLAT to BUFFERED, null marker fix may be required.
 
   // Copy the payload to the buffered object.
-  copy(*this, dst, get_layout_kind(), dest_is_initialized);
+  copy(*this, dst, get_layout_kind());
 
   if (!has_null_marker() && dst.has_null_marker()) {
     // We must fix the null marker if the src does not have a null marker but
@@ -394,7 +383,7 @@ inline bool FlatValuePayload::copy_to(ValuePayload& dst,
   return !dst.is_payload_null();
 }
 
-inline void FlatValuePayload::copy_from_helper(ValuePayload& src) {
+inline void FlatValuePayload::copy_from_non_null(BufferedValuePayload& src) {
   // Copy from BUFFERED to FLAT, null marker fix may be required.
   if (has_null_marker()) {
     // The FLAT payload has a null mark. So make sure that buffered is marked as
@@ -402,37 +391,15 @@ inline void FlatValuePayload::copy_from_helper(ValuePayload& src) {
     // valid non null value.
     src.mark_as_non_null();
   }
-  copy(src, *this, get_layout_kind(), true /* dest_is_initialized */);
-}
-
-inline bool FlatValuePayload::copy_to(BufferedValuePayload& dst) {
-  return copy_to(dst, true /* dest_is_initialized */);
-}
-
-inline bool FlatValuePayload::copy_to_uninitialized(BufferedValuePayload& dst) {
-  return copy_to(dst, false /* dest_is_initialized */);
-}
-
-inline void FlatValuePayload::copy_from_non_null(BufferedValuePayload& src) {
-  copy_from_helper(src);
+  copy(src, *this, get_layout_kind());
 }
 
 inline void FlatValuePayload::copy_to(const FlatFieldPayload& dst) {
-  copy(*this, dst, get_layout_kind(), true /* dest_is_initialized */);
-}
-
-inline void
-FlatValuePayload::copy_to_uninitialized(const FlatFieldPayload& dst) {
-  copy(*this, dst, get_layout_kind(), false /* dest_is_initialized */);
+  copy(*this, dst, get_layout_kind());
 }
 
 inline void FlatValuePayload::copy_to(const FlatArrayInlineKlassPayload& dst) {
-  copy(*this, dst, get_layout_kind(), true /* dest_is_initialized */);
-}
-
-inline void FlatValuePayload::copy_to_uninitialized(
-    const FlatArrayInlineKlassPayload& dst) {
-  copy(*this, dst, get_layout_kind(), false /* dest_is_initialized */);
+  copy(*this, dst, get_layout_kind());
 }
 
 inline inlineOop FlatValuePayload::read(TRAPS) {
@@ -447,9 +414,9 @@ inline inlineOop FlatValuePayload::read(TRAPS) {
   case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
     inlineOop res = allocate_instance(CHECK_NULL);
     BufferedValuePayload dst(res, get_klass());
-    if (!copy_to_uninitialized(dst)) {
-      // copy_to_uninitialized may fail if the payload has been updated with a
-      // null value between our is_payload_null() check above and the copy.
+    if (!copy_to(dst)) {
+      // copy_to may fail if the payload has been updated with a null value
+      // between our is_payload_null() check above and the copy.
       // In this case we have copied a null value into the buffer the payload.
       return nullptr;
     }
@@ -483,8 +450,7 @@ inline void FlatValuePayload::write_without_nullability_check(inlineOop obj) {
 
     // Use copy directly as copy_from_non_null assumes the buffered value is
     // non-null regardless of the null marker.
-    copy(null_payload, *this, get_layout_kind(),
-         true /* dest_is_initialized */);
+    copy(null_payload, *this, get_layout_kind());
   } else {
     // Copy the obj payload
     BufferedValuePayload obj_payload(obj);
