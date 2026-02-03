@@ -72,18 +72,8 @@ protected:
   static inline void copy(const PayloadA& src, const PayloadB& dst,
                           LayoutKind copy_layout_kind);
 
-public:
-  inline oop get_holder() const;
-  inline InlineKlass* get_klass() const;
-  inline ptrdiff_t get_offset() const;
-  inline LayoutKind get_layout_kind() const;
-
-  inline address get_address() const;
-
-  inline bool has_null_marker() const;
   inline void mark_as_non_null();
   inline void mark_as_null();
-  inline bool is_payload_null() const;
 
 private:
   inline void print_on(outputStream* st) const NOT_DEBUG_RETURN;
@@ -94,6 +84,16 @@ private:
                              LayoutKind copy_layout_kind) NOT_DEBUG_RETURN;
 
 public:
+  inline oop get_holder() const;
+  inline InlineKlass* get_klass() const;
+  inline ptrdiff_t get_offset() const;
+  inline LayoutKind get_layout_kind() const;
+
+  inline address get_address() const;
+
+  inline bool has_null_marker() const;
+  inline bool is_payload_null() const;
+
   class Handle;
   class OopHandle;
 
@@ -102,6 +102,8 @@ public:
 };
 
 class BufferedValuePayload : public ValuePayload {
+  friend class FlatValuePayload;
+
 protected:
   using ValuePayload::ValuePayload;
 
@@ -130,9 +132,6 @@ public:
   inline OopHandle get_oop_handle(OopStorage* storage) const;
 };
 
-class FlatFieldPayload;
-class FlatArrayInlineKlassPayload;
-
 class FlatValuePayload : public ValuePayload {
 protected:
   using ValuePayload::ValuePayload;
@@ -145,9 +144,7 @@ public:
   [[nodiscard]] inline bool copy_to(BufferedValuePayload& dst);
   inline void copy_from_non_null(BufferedValuePayload& src);
 
-  inline void copy_to(const FlatFieldPayload& dst);
-
-  inline void copy_to(const FlatArrayInlineKlassPayload& dst);
+  inline void copy_to(const FlatValuePayload& dst);
 
   [[nodiscard]] inline inlineOop read(TRAPS);
   inline void write_without_nullability_check(inlineOop obj);
@@ -165,7 +162,7 @@ public:
 };
 
 class FlatFieldPayload : public FlatValuePayload {
-protected:
+private:
   using FlatValuePayload::FlatValuePayload;
 
   inline FlatFieldPayload(instanceOop holder, ptrdiff_t offset,
@@ -205,7 +202,6 @@ private:
     int _element_size;
   } _storage;
 
-protected:
   using FlatValuePayload::FlatValuePayload;
 
   inline FlatArrayInlineKlassPayload(flatArrayOop holder, InlineKlass* klass,
