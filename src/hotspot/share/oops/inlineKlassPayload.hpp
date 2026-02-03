@@ -70,8 +70,7 @@ protected:
 
   template <typename PayloadA, typename PayloadB>
   static inline void copy(const PayloadA& src, const PayloadB& dst,
-                          LayoutKind copy_layout_kind,
-                          bool dest_is_initialized);
+                          LayoutKind copy_layout_kind);
 
 public:
   inline oop get_holder() const;
@@ -119,7 +118,6 @@ public:
   [[nodiscard]] inline inlineOop make_private_buffer(TRAPS);
 
   inline void copy_to(const BufferedValuePayload& dst);
-  inline void copy_to_uninitialized(const BufferedValuePayload& dst);
 
   [[nodiscard]] static inline BufferedValuePayload
   construct_from_parts(oop holder, InlineKlass* klass, ptrdiff_t offset,
@@ -139,25 +137,17 @@ class FlatValuePayload : public ValuePayload {
 protected:
   using ValuePayload::ValuePayload;
 
-private:
-  [[nodiscard]] inline bool copy_to(ValuePayload& dst,
-                                    bool dest_is_initialized);
-  inline void copy_from_helper(ValuePayload& src);
-
 public:
   FlatValuePayload() = default;
   FlatValuePayload(const FlatValuePayload&) = default;
   FlatValuePayload& operator=(const FlatValuePayload&) = default;
 
   [[nodiscard]] inline bool copy_to(BufferedValuePayload& dst);
-  [[nodiscard]] inline bool copy_to_uninitialized(BufferedValuePayload& dst);
   inline void copy_from_non_null(BufferedValuePayload& src);
 
   inline void copy_to(const FlatFieldPayload& dst);
-  inline void copy_to_uninitialized(const FlatFieldPayload& dst);
 
   inline void copy_to(const FlatArrayPayload& dst);
-  inline void copy_to_uninitialized(const FlatArrayPayload& dst);
 
   [[nodiscard]] inline inlineOop read(TRAPS);
   inline void write_without_nullability_check(inlineOop obj);

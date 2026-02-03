@@ -470,7 +470,7 @@ JVM_ENTRY(jarray, JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, ji
       int end = to < oh()->length() ? to : oh()->length();
       for (int i = from; i < end; i++) {
         // Copy a value
-        src_payload.copy_to_uninitialized(dst_payload);
+        src_payload.copy_to(dst_payload);
 
         // Advance to the next element
         src_payload.next_element();
