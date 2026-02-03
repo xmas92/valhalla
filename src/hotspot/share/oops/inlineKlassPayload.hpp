@@ -46,7 +46,7 @@ private:
   template <typename Holder> struct StorageImpl {
     mutable Holder _holder;
     InlineKlass* _klass;
-    size_t _offset;
+    ptrdiff_t _offset;
     LayoutKind _layout_kind;
   };
 
@@ -55,17 +55,17 @@ private:
   Storage _storage;
 
 protected:
-  static constexpr size_t BAD_OFFSET = ~0u;
+  static constexpr ptrdiff_t BAD_OFFSET = -1;
 
   InlineKlassPayload() = default;
   InlineKlassPayload(const InlineKlassPayload&) = default;
   InlineKlassPayload& operator=(const InlineKlassPayload&) = default;
 
   // Constructed from parts
-  inline InlineKlassPayload(oop holder, InlineKlass* klass, size_t offset,
+  inline InlineKlassPayload(oop holder, InlineKlass* klass, ptrdiff_t offset,
                             LayoutKind layout_kind);
 
-  inline void set_offset(size_t offset);
+  inline void set_offset(ptrdiff_t offset);
   inlineOop allocate_instance(TRAPS) const;
 
   template <typename PayloadA, typename PayloadB>
@@ -76,7 +76,7 @@ protected:
 public:
   inline oop get_holder() const;
   inline InlineKlass* get_klass() const;
-  inline size_t get_offset() const;
+  inline ptrdiff_t get_offset() const;
   inline LayoutKind get_layout_kind() const;
 
   inline address get_address() const;
@@ -110,7 +110,7 @@ public:
 
     inline oop get_holder() const;
     inline InlineKlass* get_klass() const;
-    inline size_t get_offset() const;
+    inline ptrdiff_t get_offset() const;
     inline LayoutKind get_layout_kind() const;
 
     inline InlineKlassPayload operator()() const;
@@ -131,7 +131,7 @@ public:
 
     inline oop get_holder() const;
     inline InlineKlass* get_klass() const;
-    inline size_t get_offset() const;
+    inline ptrdiff_t get_offset() const;
     inline LayoutKind get_layout_kind() const;
 
     inline InlineKlassPayload operator()() const;
@@ -162,7 +162,7 @@ public:
   inline void copy_to_uninitialized(const BufferedInlineKlassPayload& dst);
 
   [[nodiscard]] static inline BufferedInlineKlassPayload
-  construct_from_parts(oop holder, InlineKlass* klass, size_t offset,
+  construct_from_parts(oop holder, InlineKlass* klass, ptrdiff_t offset,
                        LayoutKind layout_kind);
 
   class Handle : public InlineKlassPayload::Handle {
@@ -220,7 +220,7 @@ public:
   inline void write(inlineOop obj, TRAPS);
 
   [[nodiscard]] static inline FlatInlineKlassPayload
-  construct_from_parts(oop holder, InlineKlass* klass, size_t offset,
+  construct_from_parts(oop holder, InlineKlass* klass, ptrdiff_t offset,
                        LayoutKind layout_kind);
 
   class Handle : public InlineKlassPayload::Handle {
@@ -245,7 +245,7 @@ class FlatFieldInlineKlassPayload : public FlatInlineKlassPayload {
 protected:
   using FlatInlineKlassPayload::FlatInlineKlassPayload;
 
-  inline FlatFieldInlineKlassPayload(instanceOop holder, size_t offset,
+  inline FlatFieldInlineKlassPayload(instanceOop holder, ptrdiff_t offset,
                                      InlineLayoutInfo* inline_layout_info);
 
 public:
@@ -266,7 +266,7 @@ public:
   inline instanceOop get_holder() const;
 
   [[nodiscard]] static inline FlatFieldInlineKlassPayload
-  construct_from_parts(instanceOop holder, InlineKlass* klass, size_t offset,
+  construct_from_parts(instanceOop holder, InlineKlass* klass, ptrdiff_t offset,
                        LayoutKind layout_kind);
 
   class Handle : public FlatInlineKlassPayload::Handle {
@@ -302,7 +302,7 @@ protected:
   using FlatInlineKlassPayload::FlatInlineKlassPayload;
 
   inline FlatArrayInlineKlassPayload(flatArrayOop holder, InlineKlass* klass,
-                                     size_t offset, LayoutKind layout_kind,
+                                     ptrdiff_t offset, LayoutKind layout_kind,
                                      jint layout_helper, int element_size);
 
 public:
@@ -320,11 +320,12 @@ public:
                                      FlatArrayKlass* klass);
 
   [[nodiscard]] static inline FlatArrayInlineKlassPayload
-  construct_from_parts(flatArrayOop holder, InlineKlass* klass, size_t offset,
-                       LayoutKind layout_kind);
+  construct_from_parts(flatArrayOop holder, InlineKlass* klass,
+                       ptrdiff_t offset, LayoutKind layout_kind);
   [[nodiscard]] static inline FlatArrayInlineKlassPayload
-  construct_from_parts(flatArrayOop holder, InlineKlass* klass, size_t offset,
-                       LayoutKind layout_kind, FlatArrayKlass* holder_klass);
+  construct_from_parts(flatArrayOop holder, InlineKlass* klass,
+                       ptrdiff_t offset, LayoutKind layout_kind,
+                       FlatArrayKlass* holder_klass);
 
   inline flatArrayOop get_holder() const;
 
@@ -335,7 +336,7 @@ public:
   inline void previous_element();
 
 private:
-  inline void set_offset(size_t offset);
+  inline void set_offset(ptrdiff_t offset);
 
 public:
   class Handle : public FlatInlineKlassPayload::Handle {
