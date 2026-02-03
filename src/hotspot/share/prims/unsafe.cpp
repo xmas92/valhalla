@@ -471,7 +471,7 @@ UNSAFE_ENTRY(void, Unsafe_PutFlatValue(JNIEnv *env, jobject unsafe, jobject obj,
 UNSAFE_ENTRY(jobject, Unsafe_MakePrivateBuffer(JNIEnv *env, jobject unsafe, jobject value)) {
   oop v = JNIHandles::resolve_non_null(value);
   assert(v->is_inline_type(), "must be an inline type instance");
-  BufferedInlineKlassPayload payload((inlineOop(v)));
+  BufferedValuePayload payload((inlineOop(v)));
   instanceOop new_value = payload.make_private_buffer(CHECK_NULL);
   return JNIHandles::make_local(THREAD, new_value);
 } UNSAFE_END

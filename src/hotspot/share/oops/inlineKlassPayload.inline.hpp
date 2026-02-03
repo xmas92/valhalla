@@ -296,17 +296,17 @@ inline void ValuePayload::copy(const PayloadA& src, const PayloadB& dst,
   }
 }
 
-inline inlineOop BufferedInlineKlassPayload::get_holder() const {
+inline inlineOop BufferedValuePayload::get_holder() const {
   return inlineOop(ValuePayload::get_holder());
 }
 
-inline inlineOop BufferedInlineKlassPayload::make_private_buffer(TRAPS) {
+inline inlineOop BufferedValuePayload::make_private_buffer(TRAPS) {
   assert(!get_holder()->mark().is_larval_state(),
          "Only clone immutable buffers");
 
   // Clone the object
   inlineOop private_buffer = allocate_instance(CHECK_NULL);
-  BufferedInlineKlassPayload dst(private_buffer, get_klass());
+  BufferedValuePayload dst(private_buffer, get_klass());
   copy_to_uninitialized(dst);
 
   // Mark copy as mutable
@@ -316,58 +316,53 @@ inline inlineOop BufferedInlineKlassPayload::make_private_buffer(TRAPS) {
   return private_buffer;
 }
 
-inline void
-BufferedInlineKlassPayload::copy_to(const BufferedInlineKlassPayload& dst) {
+inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
   copy(*this, dst, LayoutKind::BUFFERED, true /* dest_is_initialized */);
 }
 
-inline void BufferedInlineKlassPayload::copy_to_uninitialized(
-    const BufferedInlineKlassPayload& dst) {
+inline void
+BufferedValuePayload::copy_to_uninitialized(const BufferedValuePayload& dst) {
   copy(*this, dst, LayoutKind::BUFFERED, false /* dest_is_initialized */);
 }
 
-inline BufferedInlineKlassPayload::BufferedInlineKlassPayload(inlineOop buffer)
-    : BufferedInlineKlassPayload(buffer, InlineKlass::cast(buffer->klass())) {}
+inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer)
+    : BufferedValuePayload(buffer, InlineKlass::cast(buffer->klass())) {}
 
-inline BufferedInlineKlassPayload::BufferedInlineKlassPayload(
-    inlineOop buffer, InlineKlass* klass)
-    : BufferedInlineKlassPayload(buffer, klass, klass->payload_offset(),
-                                 LayoutKind::BUFFERED) {}
+inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer,
+                                                  InlineKlass* klass)
+    : BufferedValuePayload(buffer, klass, klass->payload_offset(),
+                           LayoutKind::BUFFERED) {}
 
-inline BufferedInlineKlassPayload
-BufferedInlineKlassPayload::construct_from_parts(oop holder, InlineKlass* klass,
-                                                 ptrdiff_t offset,
-                                                 LayoutKind layout_kind) {
-  return BufferedInlineKlassPayload(holder, klass, offset, layout_kind);
+inline BufferedValuePayload BufferedValuePayload::construct_from_parts(
+    oop holder, InlineKlass* klass, ptrdiff_t offset, LayoutKind layout_kind) {
+  return BufferedValuePayload(holder, klass, offset, layout_kind);
 }
 
-BufferedInlineKlassPayload
-BufferedInlineKlassPayload::Handle::operator()() const {
+BufferedValuePayload BufferedValuePayload::Handle::operator()() const {
   return construct_from_parts(get_holder(), get_klass(), get_offset(),
                               get_layout_kind());
 }
 
-BufferedInlineKlassPayload
-BufferedInlineKlassPayload::OopHandle::operator()() const {
+BufferedValuePayload BufferedValuePayload::OopHandle::operator()() const {
   return construct_from_parts(get_holder(), get_klass(), get_offset(),
                               get_layout_kind());
 }
 
-inline inlineOop BufferedInlineKlassPayload::Handle::get_holder() const {
+inline inlineOop BufferedValuePayload::Handle::get_holder() const {
   return inlineOop(ValuePayload::Handle::get_holder());
 }
 
-inline inlineOop BufferedInlineKlassPayload::OopHandle::get_holder() const {
+inline inlineOop BufferedValuePayload::OopHandle::get_holder() const {
   return inlineOop(ValuePayload::OopHandle::get_holder());
 }
 
-BufferedInlineKlassPayload::Handle
-BufferedInlineKlassPayload::get_handle(JavaThread* thread) const {
+BufferedValuePayload::Handle
+BufferedValuePayload::get_handle(JavaThread* thread) const {
   return Handle(*this, thread);
 }
 
-BufferedInlineKlassPayload::OopHandle
-BufferedInlineKlassPayload::get_oop_handle(OopStorage* storage) const {
+BufferedValuePayload::OopHandle
+BufferedValuePayload::get_oop_handle(OopStorage* storage) const {
   return OopHandle(*this, storage);
 }
 
@@ -410,17 +405,17 @@ inline void FlatInlineKlassPayload::copy_from_helper(ValuePayload& src) {
   copy(src, *this, get_layout_kind(), true /* dest_is_initialized */);
 }
 
-inline bool FlatInlineKlassPayload::copy_to(BufferedInlineKlassPayload& dst) {
+inline bool FlatInlineKlassPayload::copy_to(BufferedValuePayload& dst) {
   return copy_to(dst, true /* dest_is_initialized */);
 }
 
 inline bool
-FlatInlineKlassPayload::copy_to_uninitialized(BufferedInlineKlassPayload& dst) {
+FlatInlineKlassPayload::copy_to_uninitialized(BufferedValuePayload& dst) {
   return copy_to(dst, false /* dest_is_initialized */);
 }
 
 inline void
-FlatInlineKlassPayload::copy_from_non_null(BufferedInlineKlassPayload& src) {
+FlatInlineKlassPayload::copy_from_non_null(BufferedValuePayload& src) {
   copy_from_helper(src);
 }
 
@@ -455,7 +450,7 @@ inline inlineOop FlatInlineKlassPayload::read(TRAPS) {
   case LayoutKind::NULL_FREE_ATOMIC_FLAT:
   case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
     inlineOop res = allocate_instance(CHECK_NULL);
-    BufferedInlineKlassPayload dst(res, get_klass());
+    BufferedValuePayload dst(res, get_klass());
     if (!copy_to_uninitialized(dst)) {
       // copy_to_uninitialized may fail if the payload has been updated with a
       // null value between our is_payload_null() check above and the copy.
@@ -489,7 +484,7 @@ FlatInlineKlassPayload::write_without_nullability_check(inlineOop obj) {
     }
 
     // Copy the null payload
-    BufferedInlineKlassPayload null_payload = get_klass()->null_payload();
+    BufferedValuePayload null_payload = get_klass()->null_payload();
 
     // Use copy directly as copy_from_non_null assumes the buffered value is
     // non-null regardless of the null marker.
@@ -497,7 +492,7 @@ FlatInlineKlassPayload::write_without_nullability_check(inlineOop obj) {
          true /* dest_is_initialized */);
   } else {
     // Copy the obj payload
-    BufferedInlineKlassPayload obj_payload(obj);
+    BufferedValuePayload obj_payload(obj);
     copy_from_non_null(obj_payload);
   }
 }
