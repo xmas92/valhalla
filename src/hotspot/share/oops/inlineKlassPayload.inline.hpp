@@ -145,7 +145,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
     st->cr();
   });
 
-  postcond(get_holder() != nullptr);
+  postcond(is_raw() || get_holder() != nullptr);
   postcond(get_klass()->is_layout_supported(get_layout_kind()));
   postcond(get_layout_kind() != LayoutKind::REFERENCE &&
            get_layout_kind() != LayoutKind::UNKNOWN);
@@ -217,7 +217,8 @@ inline LayoutKind ValuePayload::get_layout_kind() const {
 }
 
 inline address ValuePayload::get_address() const {
-  return cast_from_oop<address>(get_holder()) + _storage._offset;
+  return reinterpret_cast<address>(cast_from_oop<intptr_t>(get_holder()) +
+                                   _storage._offset);
 }
 
 inline bool ValuePayload::has_null_marker() const {
@@ -567,13 +568,21 @@ inline ValuePayload ValuePayload::OopHandle::operator()() const {
 }
 
 inline ValuePayload::Handle ValuePayload::get_handle(JavaThread* thread) const {
+  precond(!is_raw());
   return Handle(*this, thread);
 }
 
 inline ValuePayload::OopHandle
 ValuePayload::get_oop_handle(OopStorage* storage) const {
+  precond(!is_raw());
   return OopHandle(*this, storage);
 }
+
+inline RawValuePayload::RawValuePayload(address payload_address,
+                                        InlineKlass* klass,
+                                        LayoutKind layout_kind)
+    : ValuePayload(nullptr, klass, reinterpret_cast<ptrdiff_t>(payload_address),
+                   layout_kind) {}
 
 BufferedValuePayload BufferedValuePayload::Handle::operator()() const {
   return construct_from_parts(get_holder(), get_klass(), get_offset(),

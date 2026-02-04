@@ -76,6 +76,7 @@ protected:
   inline void mark_as_null();
 
 private:
+  DEBUG_ONLY(virtual bool is_raw() const { return false; })
   inline void print_on(outputStream* st) const NOT_DEBUG_RETURN;
   inline void assert_post_construction_invariants() const NOT_DEBUG_RETURN;
   template <typename PayloadA, typename PayloadB>
@@ -99,6 +100,17 @@ public:
 
   inline Handle get_handle(JavaThread* thread) const;
   inline OopHandle get_oop_handle(OopStorage* storage) const;
+};
+
+class RawValuePayload : public ValuePayload {
+public:
+  RawValuePayload() = default;
+
+  inline RawValuePayload(address payload_address, InlineKlass* klass,
+                         LayoutKind layout_kind);
+
+private:
+  DEBUG_ONLY(bool is_raw() const final { return true; })
 };
 
 class BufferedValuePayload : public ValuePayload {
