@@ -44,6 +44,7 @@ public class TestSourceVersion {
         testRestrictedKeywords();
         testVar();
         testYield();
+        testValue();
         testValueOfRV();
         testRuntimeVersion();
     }
