@@ -930,7 +930,7 @@ public final class ObjectStreamClass implements Serializable {
     }
 
     /**
-     * {@return {code true} if the class is a value class, {@code false} otherwise}
+     * {@return {@code true} if the class is a value class, {@code false} otherwise}
      */
     boolean isValue() {
         requireInitialized();
@@ -2437,7 +2437,7 @@ public final class ObjectStreamClass implements Serializable {
                 // position i (Ti+1) from primValues and objValues arrays
                 // (byte[], Object[]):Ti+1
                 MethodHandle combiner = streamFieldExtractor(name, type, desc);
-                // fold byte[] privValues and Object[] objValues into argument at position i (Ti+1)
+                // fold byte[] primValues and Object[] objValues into argument at position i (Ti+1)
                 // (..., Ti, Ti+1, byte[], Object[]):Object -> (..., Ti, byte[], Object[]):Object
                 mh = MethodHandles.foldArguments(mh, i, combiner);
             }
@@ -2485,7 +2485,7 @@ public final class ObjectStreamClass implements Serializable {
                 // position i (Ti+1) from primValues and objValues arrays
                 // (byte[], Object[]):Ti+1
                 MethodHandle combiner = streamFieldExtractor(name, type, desc);
-                // fold byte[] privValues and Object[] objValues into argument at position i (Ti+1)
+                // fold byte[] primValues and Object[] objValues into argument at position i (Ti+1)
                 // (..., Ti, Ti+1, byte[], Object[]):Object -> (..., Ti, byte[], Object[]):Object
                 mh = MethodHandles.foldArguments(mh, i, combiner);
             }

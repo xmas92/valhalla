@@ -1326,7 +1326,7 @@ public class Code {
         StackMapFrame frame = new StackMapFrame();
         frame.pc = pc;
 
-        boolean hasUninitalizedThis = false;
+        boolean hasUninitializedThis = false;
         int localCount = 0;
         Type[] locals = new Type[localsSize];
         for (int i=0; i<localsSize; i++, localCount++) {
@@ -1335,7 +1335,7 @@ public class Code {
                 if (!(vtype instanceof UninitializedType)) {
                     vtype = types.erasure(vtype);
                 } else if (vtype.hasTag(TypeTag.UNINITIALIZED_THIS)) {
-                    hasUninitalizedThis = true;
+                    hasUninitializedThis = true;
                 }
                 locals[i] = vtype;
                 if (width(vtype) > 1) i++;
@@ -1363,7 +1363,7 @@ public class Code {
         }
 
         Set<VarSymbol> unsetFieldsAtPC = cpToUnsetFieldsMap.get(pc);
-        boolean encloseWithEarlyLarvalFrame = unsetFieldsAtPC != null && generateEarlyLarvalFrame && hasUninitalizedThis
+        boolean encloseWithEarlyLarvalFrame = unsetFieldsAtPC != null && generateEarlyLarvalFrame && hasUninitializedThis
                 && !lastFrame.unsetFields.equals(unsetFieldsAtPC);
 
         if (stackMapTableBuffer == null) {

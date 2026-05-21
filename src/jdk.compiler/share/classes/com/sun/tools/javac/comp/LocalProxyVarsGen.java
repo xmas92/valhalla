@@ -199,17 +199,17 @@ public class LocalProxyVarsGen extends TreeTranslator {
             newBody = newBody.append(fieldRewriter.translate(st));
         }
         localDeclarations.addAll(newBody);
-        ListBuffer<JCStatement> assigmentsBeforeSuper = new ListBuffer<>();
+        ListBuffer<JCStatement> assignmentsBeforeSuper = new ListBuffer<>();
         for (Symbol vsym : fieldToLocalMap.keySet()) {
             Symbol local = fieldToLocalMap.get(vsym);
-            assigmentsBeforeSuper.append(make.at(constructor.pos()).Assignment(vsym, make.at(constructor.pos()).Ident(local)));
+            assignmentsBeforeSuper.append(make.at(constructor.pos()).Assignment(vsym, make.at(constructor.pos()).Ident(local)));
         }
         constructor.body.stats = localDeclarations.toList();
         JCTree.JCMethodInvocation constructorCall = TreeInfo.findConstructorCall(constructor);
         if (constructorCall.args.isEmpty()) {
             // this is just a super invocation with no arguments we can set the fields just before the invocation
             // and let Gen do the rest
-            TreeInfo.mapSuperCalls(constructor.body, supercall -> make.Block(0, assigmentsBeforeSuper.toList().append(supercall)));
+            TreeInfo.mapSuperCalls(constructor.body, supercall -> make.Block(0, assignmentsBeforeSuper.toList().append(supercall)));
         } else {
             // we need to generate fresh local variables to catch the values of the arguments, then
             // assign the proxy locals to the fields and finally invoke the super with the fresh local variables
@@ -229,7 +229,7 @@ public class LocalProxyVarsGen extends TreeTranslator {
             }
             constructorCall.args = newArgs.toList();
             TreeInfo.mapSuperCalls(constructor.body,
-                    supercall -> make.Block(0, superArgsProxiesList.appendList(assigmentsBeforeSuper.toList()).append(supercall)));
+                    supercall -> make.Block(0, superArgsProxiesList.appendList(assignmentsBeforeSuper.toList()).append(supercall)));
         }
     }
 

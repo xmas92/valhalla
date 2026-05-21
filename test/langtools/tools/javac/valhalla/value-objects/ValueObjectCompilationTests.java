@@ -1126,7 +1126,7 @@ class ValueObjectCompilationTests extends CompilationTestCase {
     }
 
     @Test
-    void testNullAssigment() throws Exception {
+    void testNullAssignment() throws Exception {
         assertOK(
                 """
                 value final class V {
